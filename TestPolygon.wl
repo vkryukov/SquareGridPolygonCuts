@@ -184,7 +184,7 @@ testSegmentFunction[fn_, s1_, s2_, result_] := Module[{},
 
 
 testSegmentFunction[
-	Polygon`Private`orthogonalSegmentInterectsSegment,
+	Polygon`Private`orthogonalSegmentIntersectsSegment,
 	{{1, 3}, {10, 3}},
 	{{5, 3}, {6, 3}},
 	False
@@ -308,3 +308,14 @@ TestCreate[
 ];
 
 ];
+
+
+(* ::Text:: *)
+(*If there are two identical cuts with the only difference is their direction, we need to return only one.*)
+
+
+TestCreate[
+	FindAllCuts[{{0,0},{0,3},{2,3},{2,4},{5,4},{5,3},{3,3},{3,2},{1,2},{1,0}}]
+	,
+	{{{2,2},{2,4}}}
+]

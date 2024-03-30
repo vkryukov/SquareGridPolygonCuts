@@ -83,16 +83,25 @@ Begin["`Private`"];
 (*Drawing primitives*)
 
 
-PolygonDraw[points_] := Graphics[{
-   EdgeForm[LightGray]
-   , FaceForm[LightBlue]
-   , Polygon[points]
-   , MapIndexed[Text[Style[#2[[1]], 12, Bold], #1] &, points]
-   }];
+PolygonDraw[points_] := Module[{x1,y1,x2,y2,d=0.2},
+	{x1, x2} = MinMax[ points[[ All, 1 ]] ];
+	{y1, y2} = MinMax[ points[[ All, 2 ]] ];
+	
+	Graphics[{
+		EdgeForm[Darker @ Gray]
+		, FaceForm[LightBlue]
+		, Polygon[points]
+		, MapIndexed[Text[Style[#2[[1]], 12, Bold], #1] &, points]
+		, Thin
+		, EdgeForm[LightGray]
+		, Table[ Line[{{x1 - d, y}, {x2 + d, y}}], {y, y1, y2}]
+		, Table[ Line[{{x, y1 - d}, {x, y2 + d}}], {x, x1, x2}]		
+	}]
+]
 
 
 PolygonDraw[poly_, path_] := Graphics[{
-   Splice@First@PolygonDraw[poly]
+   Splice @ First @ PolygonDraw[poly]
    , Thick
    , Opacity[.7]
    , Red
@@ -419,7 +428,7 @@ FindCut[ poly_, p1_, d_ ] := Module [{
 		
 	(* Steps 6-7 *)
 	polySegments = polygonSegments @ poly;
-	c1 = Position [ poly, lastPoint ];\[AliasDelimiter]
+	c1 = Position [ poly, lastPoint ];
 	
 	If [ c1 === {},
 		(* p2s lies on the side - let's find this side *)
@@ -463,6 +472,10 @@ FindCut[ poly_, p1_, d_ ] := Module [{
 		
 		(* normalize p2s by removing the head that lies on the side of polygon *)
 		While[ PolygonSideContainsSegment[ poly, p2s[[ ;; 2]] ], p2s = Rest @ p2s ];
+		With[{ f = First @ p2s, l = Last @ p2s },
+			If [ f[[1]] > l[[1]] || (f[[1]] == l[[1]] && f[[2]] > l[[2]]),
+				p2s = Reverse @ p2s]
+		];
 		p2s
 		,
 		Missing["No cut orthogonal to p1 in direction d", {p1, d}]
