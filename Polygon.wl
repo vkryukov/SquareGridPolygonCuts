@@ -106,13 +106,19 @@ PolygonDraw[poly_, path_] := Graphics[{
    , Opacity[.7]
    , Red
    , Line@path
+   , Opacity[.25]
+   , PointSize[.05]
+   , Point[ First @ path ]
    }];
 
 
 PolygonDraw[poly_, p1_, p2_] := Graphics[{
    Splice@First@PolygonDraw[poly, p1]
+   , Opacity[.7]
    , Blue
    , Line@p2
+   , Opacity[.25]
+   , Point [ First @ p2 ]
    }];
 
 
@@ -402,38 +408,18 @@ polygonSideContainsPoint[ poly_, point_ ] := AnyTrue[
 ];
 
 
-FindCut[ poly_, p1_, d_ ] := Module [{ 
-	a = First @ p1, 
-	b = Last @ p1, 
-	d2 = Normalize[ p1[[2]] - p1[[1]] ],
-	p2, i, p2s, lastPoint, polySegments, 
-	c1, c2, r1, r2, ai, bi,
-	p1f, p2f
+findSurroundingVertices[ poly_, point_ ] := Module[{
+	c1 = Position [ poly, point ], 
+	c2, 
+	polySegments = polygonSegments @ poly
 	},
 	
-	(* Steps 1-4 *)
-	p2 = CongruentPathFrom[ p1, b, d];
-	i = findFirstTouchPoint[ p1, p2 ];
-	If [ i == -1, Return @ Missing[ "p1 doesn't touch p2", {p1, p2} ] ];
-	p2s = p2 [[ ;; i ]];
-	
-	(* Step 5 *)
-	lastPoint = Last @ p2s;
-	If [ Not @ polygonSideContainsPoint[ poly, lastPoint ], 
-		Return @ Missing["p2s doesn't have last point on the side", p2s ] ];
-	If [ PolygonSideContainsPath[ poly, p2s ], 
-		Return @  Missing["p2s lies on the side", p2s ] ];
-	If [ Not @ AllTrue [ pathSegments @ p2s, SegmentWithinPolygon [ poly, # ]& ],
-		Return @ Missing["p2s goes outside of polygon", p2s ] ];
-		
-	(* Steps 6-7 *)
-	polySegments = polygonSegments @ poly;
-	c1 = Position [ poly, lastPoint ];
+	Echo[{poly, point}, "findSurroundingVertices"];
 	
 	If [ c1 === {},
 		(* p2s lies on the side - let's find this side *)
 		Do[
-			If [ segmentContainsPoint[ polySegments[[ i ]], lastPoint ],
+			If [ segmentContainsPoint[ polySegments[[ i ]], point ],
 				c1 = i;
 				c2 = Mod[ i, Length @ polySegments ] + 1;
 				Return[]
@@ -455,6 +441,38 @@ FindCut[ poly_, p1_, d_ ] := Module [{
 			c2 = c1 + 1; c1 = c1 - 1 
 		]
 	];
+	{c1, c2}
+]
+
+
+FindCut[ poly_, p1_, d_ ] := Module [{ 
+	a = First @ p1, 
+	b = Last @ p1, 
+	d2 = Normalize[ p1[[2]] - p1[[1]] ],
+	p2, i, p2s, lastPoint, polySegments, 
+	c1, c2, r1, r2, ai, bi,
+	p1f, p2f
+	},
+	
+	Echo[{poly, p1, d}, "FindCut"];
+	
+	(* Steps 1-4 *)
+	p2 = CongruentPathFrom[ p1, b, d];
+	i = findFirstTouchPoint[ p1, p2 ];
+	If [ i == -1, Return @ Missing[ "p1 doesn't touch p2", {p1, p2} ] ];
+	p2s = p2 [[ ;; i ]];
+	
+	(* Step 5 *)
+	lastPoint = Last @ p2s;
+	If [ Not @ polygonSideContainsPoint[ poly, lastPoint ], 
+		Return @ Missing["p2s doesn't have last point on the side", p2s ] ];
+	If [ PolygonSideContainsPath[ poly, p2s ], 
+		Return @  Missing["p2s lies on the side", p2s ] ];
+	If [ Not @ AllTrue [ pathSegments @ p2s, SegmentWithinPolygon [ poly, # ]& ],
+		Return @ Missing["p2s goes outside of polygon", p2s ] ];
+		
+	(* Steps 6-7 *)
+	{c1, c2} = findSurroundingVertices[ poly, lastPoint ];
 	
 	ai = Position[ poly, a ][[ 1, 1 ]];
 	bi = Position[ poly, b ][[ 1, 1 ]];
