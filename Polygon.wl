@@ -415,7 +415,7 @@ findSurroundingVertices[ poly_, point_ ] := Module[{
 	},
 	
 	Echo[{poly, point}, "findSurroundingVertices"];
-	
+	Echo[c1, "c1"];
 	If [ c1 === {},
 		(* p2s lies on the side - let's find this side *)
 		Do[
@@ -432,16 +432,18 @@ findSurroundingVertices[ poly_, point_ ] := Module[{
 		c1 = c1[[ 1, 1 ]];
 		Which [
 			c1 == Length @ poly, 
-			c1 = c1 - 1; c2 = 1,
+			c1 = c1 - 1; c2 = 1
+			,
 			
 			c1 == 1,
-			c1 = Length@poly, c2 = 2;
+			c1 = Length@poly; c2 = 2
+			,
 			
 			True,
 			c2 = c1 + 1; c1 = c1 - 1 
 		]
 	];
-	{c1, c2}
+	Sort[{c1, c2}]
 ]
 
 
