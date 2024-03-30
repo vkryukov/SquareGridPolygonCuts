@@ -129,7 +129,7 @@ PolygonDraw[poly_, p1_, p2_] := Graphics[{
 CyclicRange[n_Integer, from_Integer, to_Integer] :=
  If[from < to,
   {Range[from, to]
-   , Join[Range[to, n], Range[1, from]]},
+   , Join[Range[from, 1,-1], Range[n, to, -1]]},
   {Range[from, to, -1]
    , Join[Range[from, n], Range[1, to]]}
   ];
