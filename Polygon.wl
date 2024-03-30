@@ -414,8 +414,6 @@ findSurroundingVertices[ poly_, point_ ] := Module[{
 	polySegments = polygonSegments @ poly
 	},
 	
-	Echo[{poly, point}, "findSurroundingVertices"];
-	Echo[c1, "c1"];
 	If [ c1 === {},
 		(* p2s lies on the side - let's find this side *)
 		Do[
@@ -455,9 +453,7 @@ FindCut[ poly_, p1_, d_ ] := Module [{
 	c1, c2, r1, r2, ai, bi,
 	p1f, p2f
 	},
-	
-	Echo[{poly, p1, d}, "FindCut"];
-	
+
 	(* Steps 1-4 *)
 	p2 = CongruentPathFrom[ p1, b, d];
 	i = findFirstTouchPoint[ p1, p2 ];
