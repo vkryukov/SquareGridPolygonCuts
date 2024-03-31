@@ -440,7 +440,12 @@ findFirstTouchPoint[ p1_, p2_ ] := Module[ { s1 = pathSegments @ p1, s2 = pathSe
 			 i != 1 || Not @ segmentContainsPoint[ s2[[j]], s1[[i, 1]] ]
 			), Throw @ p1[[ ;; i+1 ]] ];
 		If[ orthogonalSegmentStrictlyIntersectsSegment[ s1[[i]], s2[[j]] ], Throw @ {} ];
-		If[ segmentOverlapsSegment[ s1[[i]], s2[[j]] ], Throw @ {} ];
+		If[ segmentOverlapsSegment[ s1[[i]], s2[[j]] ], 
+			Module[{ sub = findTouchingSubsegment[ s1[[i]], s2[[j]] ]},
+				If[ MissingQ @ sub, Throw @ {} ];
+				Throw @ Append[ p1[[ ;; i ]], sub[[2]] ]
+			]
+		];
 	, {i, 1, Length @ s1}, {j, 1, Length @ s2}]
 ];
 
