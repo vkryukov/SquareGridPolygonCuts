@@ -421,16 +421,14 @@ findSurroundingVertices[ poly_, point_ ] := Module[{
 (*findFirstTouchPoint find a shortest sub-path of p1 that touches p2 but doesn't intersect p2, and returns it,  or returns {} if it doesn't exist. In a case of a symmetrical polygon, when p1 and p2 touch at the start and the end points, it returns p1.*)
 
 
-findFirstTouchPoint[ p1_, p2_ ] := Module[ { s1 = pathSegments @ p1, s2 = pathSegments @ p2, pos },
-	pos = Catch @ Do[
+findFirstTouchPoint[ p1_, p2_ ] := Module[ { s1 = pathSegments @ p1, s2 = pathSegments @ p2 },
+	Catch @ Do[
 		If[ segmentTouchesSegment[ s1[[i]], s2[[j]] ] && (
 			 i != 1 || Not @ segmentContainsPoint[ s2[[j]], s1[[i, 1]] ]
-			), Throw @ i ];
-		If[ orthogonalSegmentStrictlyIntersectsSegment[ s1[[i]], s2[[j]] ], Throw @ Null ];
-		If[ segmentOverlapsSegment[ s1[[i]], s2[[j]] ], Throw @ Null ];
-	, {i, 1, Length @ s1}, {j, 1, Length @ s2}];
-	
-	If[ pos === Null, {}, p1[[ ;; pos + 1]] ]
+			), Throw @ p1[[ ;; i+1 ]] ];
+		If[ orthogonalSegmentStrictlyIntersectsSegment[ s1[[i]], s2[[j]] ], Throw @ {} ];
+		If[ segmentOverlapsSegment[ s1[[i]], s2[[j]] ], Throw @ {} ];
+	, {i, 1, Length @ s1}, {j, 1, Length @ s2}]
 ];
 
 
