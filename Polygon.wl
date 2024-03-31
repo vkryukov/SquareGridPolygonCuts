@@ -578,7 +578,6 @@ FindCut[ poly_, p1_, d_ ] := Module [{
 			If [ f[[1]] > l[[1]] || (f[[1]] == l[[1]] && f[[2]] > l[[2]]),
 				p2s = Reverse @ p2s]
 		];
-		Echo[{p1, d}, "Findcut: found solution"];
 		p2s
 		,
 		Missing["No cut orthogonal to p1 in direction d", {p1, d}]
