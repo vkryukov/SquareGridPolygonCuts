@@ -371,38 +371,7 @@ PathWithinPolygon[ polygon_, path_ ] := AllTrue [ pathSegments @ path, SegmentWi
 
 
 (* ::Subsubsection:: *)
-(*Cutting algorithms*)
-
-
-(* ::Text:: *)
-(*Here is the algorithm that finds a possible cut. Start with two points A and B on the sides of the polygon, a path P1 between them, and a possible direction D along the sides of the polygon at point B.*)
-(**)
-(*1. Define P2 as a path that's congruent to P1 but starts at point B and goes in the direction D.*)
-(*2. Find P1s, which is a sub path of P1 starting in A that "touches" path P2. If P1 and P2 only intersect in point B, this is P1; this path might not exist if some of the segments of P1 properly intersects P2 (i.e., not in one of the vertices).*)
-(*3. If such path doesn't exist, stop: there is not cut that is congruent to (some part of) P1.*)
-(*4. If it does exist, let P2s be the corresponding congruent sub-path of P2 starting in B.*)
-(*5a. If P1s == P1 and therefore P2 == P2s (the first touch happens in point B), that means that the polygon is symmetrical. We find a cut or not depending on whether its center point lies on the square grid.*)
-(*5b. Otherwise, if either (a) P2s's end point is not on the side, (b) P2s goes outside of the polygon, (c) P2s goes along the sides of the polygon (e.g., doesn't go "inside" the polygon), stop:  there is not cut that is congruent to (some part of) P1.*)
-(*6. Otherwise, P2s is a valid cut. We now have to check whether it divided the polygon into two equal parts.*)
-(*7. For this, we need to extend P2s by adding a path from the end of P2s that goes on the side of the polygon and goes back into B, but does NOT go into A. (There is only one such path). Let's call this path P2f.*)
-(*8. Build P1f: a path that starts in A, goes in the same direction as P1, and is congruent to P2f. If this path completely lies within the sides of the polygon plus P2s, and P1f with P2f contain all the vertices of the polygon, stop: P2s is the answer. Otherwise, stop:  there is not cut that is congruent to (some part of) P1.*)
-
-
-(* ::Text:: *)
-(*findFirstTouchPoint find a shortest sub-path of p1 that touches p2 but doesn't intersect p2, and returns it's length, or returns -1 if it doesn't exist. In a case of a symmetrical polygon, when p1 and p2 touch at the start and the end points, it returns p1.*)
-
-
-findFirstTouchPoint[ p1_, p2_ ] := Module[ { s1 = pathSegments @ p1, s2 = pathSegments @ p2, pos },
-	pos = Catch @ Do[
-		If[ segmentTouchesSegment[ s1[[i]], s2[[j]] ] && (
-			 i != 1 || Not @ segmentContainsPoint[ s2[[j]], s1[[i, 1]] ]
-			), Throw @ i ];
-		If[ orthogonalSegmentStrictlyIntersectsSegment[ s1[[i]], s2[[j]] ], Throw @ Null ];
-		If[ segmentOverlapsSegment[ s1[[i]], s2[[j]] ], Throw @ Null ];
-	, {i, 1, Length @ s1}, {j, 1, Length @ s2}];
-	
-	If[ pos === Null, -1, pos + 1 ]
-];
+(*Helper utilities for cutting algorithm*)
 
 
 polygonSideContainsPoint[ poly_, point_ ] := AnyTrue[ 
@@ -448,30 +417,62 @@ findSurroundingVertices[ poly_, point_ ] := Module[{
 ]
 
 
+(* ::Text:: *)
+(*findFirstTouchPoint find a shortest sub-path of p1 that touches p2 but doesn't intersect p2, and returns it,  or returns {} if it doesn't exist. In a case of a symmetrical polygon, when p1 and p2 touch at the start and the end points, it returns p1.*)
+
+
+findFirstTouchPoint[ p1_, p2_ ] := Module[ { s1 = pathSegments @ p1, s2 = pathSegments @ p2, pos },
+	pos = Catch @ Do[
+		If[ segmentTouchesSegment[ s1[[i]], s2[[j]] ] && (
+			 i != 1 || Not @ segmentContainsPoint[ s2[[j]], s1[[i, 1]] ]
+			), Throw @ i ];
+		If[ orthogonalSegmentStrictlyIntersectsSegment[ s1[[i]], s2[[j]] ], Throw @ Null ];
+		If[ segmentOverlapsSegment[ s1[[i]], s2[[j]] ], Throw @ Null ];
+	, {i, 1, Length @ s1}, {j, 1, Length @ s2}];
+	
+	If[ pos === Null, {}, p1[[ ;; pos + 1]] ]
+];
+
+
+(* ::Subsubsection:: *)
+(*Cutting algorithms*)
+
+
+(* ::Text:: *)
+(*Here is the algorithm that finds a possible cut. Start with two points A and B on the sides of the polygon, a path P1 between them, and a possible direction D along the sides of the polygon at point B.*)
+(**)
+(*1. Define P2 as a path that's congruent to P1 but starts at point B and goes in the direction D.*)
+(*2. Find P1s, which is a sub path of P1 starting in A that "touches" path P2. If P1 and P2 only intersect in point B, this is P1; this path might not exist if some of the segments of P1 properly intersects P2 (i.e., not in one of the vertices).*)
+(*3. If such path doesn't exist, stop: there is not cut that is congruent to (some part of) P1.*)
+(*4. If it does exist, let P2s be the corresponding congruent sub-path of P2 starting in B.*)
+(*5a. If P1s == P1 and therefore P2 == P2s (the first touch happens in point B), that means that the polygon is symmetrical. We find a cut or not depending on whether its center point lies on the square grid.*)
+(*5b. Otherwise, if either (a) P2s's end point is not on the side, (b) P2s goes outside of the polygon, (c) P2s goes along the sides of the polygon (e.g., doesn't go "inside" the polygon), stop:  there is not cut that is congruent to (some part of) P1.*)
+(*6. Otherwise, P2s is a valid cut. We now have to check whether it divided the polygon into two equal parts.*)
+(*7. For this, we need to extend P2s by adding a path from the end of P2s that goes on the side of the polygon and goes back into B, but does NOT go into A. (There is only one such path). Let's call this path P2f.*)
+(*8. Build P1f: a path that starts in A, goes in the same direction as P1, and is congruent to P2f. If this path completely lies within the sides of the polygon plus P2s, and P1f with P2f contain all the vertices of the polygon, stop: P2s is the answer. Otherwise, stop:  there is not cut that is congruent to (some part of) P1.*)
+
+
 FindCut[ poly_, p1_, d_ ] := Module [{ 
 	a = First @ p1, 
 	b = Last @ p1, 
 	d2 = Normalize[ p1[[2]] - p1[[1]] ],
-	p2, i, p2s, lastPoint, polySegments, centroid,
+	p2, p1s, p2s, lastPoint, polySegments, centroid,
 	c1, c2, r1, r2, ai, bi,
 	p1f, p2f
 	},
 
 	(* Steps 1-4 *)
 	p2 = CongruentPathFrom[ p1, b, d];
-	i = findFirstTouchPoint[ p1, p2 ];
+	p1s = findFirstTouchPoint[ p1, p2 ];
 	
-	Echo[ p2, "p2" ];
-	If [ i == -1, Return @ Missing[ "p1 doesn't touch p2", {p1, p2} ] ];
-	p2s = p2 [[ ;; i ]];
+	If [ p1s == {}, Return @ Missing[ "p1 doesn't touch p2", {p1, p2} ] ];
+	p2s = CongruentPathFrom[ p1s, b, d];
 	
 	(* Step 5 *)
 	lastPoint = Last @ p2s;
 	
 	(* Step 5a: check for a symmetrical polygon *)
-	Echo[ {i, poly[[i]], b}, "i, poly[[i]], b" ];
-	Echo[ {a, lastPoint}, "a, lastPoint" ];
-	If [ poly[[i]] == b && lastPoint == a && PolygonSideContainsPath[ poly, p2s ],
+	If [ p1s == p1 && lastPoint == a && PolygonSideContainsPath[ poly, p2s ],
 		centroid = Mean[ poly ];
 		Echo[ centroid, "centroid" ];
 		Return @ Which[
