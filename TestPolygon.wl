@@ -280,7 +280,7 @@ TestCreate[
 
 
 (* ::Subsubsection:: *)
-(*FindAllCuts and friends*)
+(*Helper utilities for FindAllCuts*)
 
 
 TestCreate[
@@ -299,6 +299,30 @@ TestCreate[
 	,
 	{2, 10}
 ]
+
+
+TestCreate[
+	Polygon`Private`findTouchingSubsegment[
+		{{0, 0}, {5, 0}},
+		{{6, 0}, {3, 0}}
+	]
+	,
+	{{0, 0}, {3, 0}}
+]
+
+
+TestCreate[
+	MissingQ @ Polygon`Private`findTouchingSubsegment[
+		{{0, 0}, {5, 0}},
+		{{-1, 0}, {3, 0}}
+	]
+	,
+	True
+]
+
+
+(* ::Subsubsection:: *)
+(*FindCut*)
 
 
 With[{poly = {{0,0},{1,0},{1,1},{2,1}, {2,2},{6,2},{6,3},{5,3},{5,4},{4,4},{4,5},{-1,5},{-1,4},{-2,4},{-2,2},{-1,2},{-1,1},{0,1}}},

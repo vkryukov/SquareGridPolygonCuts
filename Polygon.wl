@@ -418,6 +418,19 @@ findSurroundingVertices[ poly_, point_ ] := Module[{
 
 
 (* ::Text:: *)
+(*findTouchingSubsegment takes two overlapping segments s1 and s2, and returns a sub-segment of s1 that touches s2. That's only possible if the starting point of s1 is outside of s2. Otherwise, it Missing[].*)
+
+
+findTouchingSubsegment[ s1: {p1_, p2_}, s2_ ] := Module[{diff = p2 - p1},
+	If[ segmentContainsPoint[ s2, p1 ], Return @ Missing["p1 is inside s2", {p1, s2}] ];
+	SelectFirst[ 
+		Table[{p1, p1 + i * Normalize @ diff}, {i, Total @ diff}], 
+		segmentTouchesSegment[ #, s2]& 
+	]
+]
+
+
+(* ::Text:: *)
 (*findFirstTouchPoint find a shortest sub-path of p1 that touches p2 but doesn't intersect p2, and returns it,  or returns {} if it doesn't exist. In a case of a symmetrical polygon, when p1 and p2 touch at the start and the end points, it returns p1.*)
 
 
