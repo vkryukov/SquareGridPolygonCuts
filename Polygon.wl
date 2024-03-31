@@ -424,7 +424,7 @@ findSurroundingVertices[ poly_, point_ ] := Module[{
 findTouchingSubsegment[ s1: {p1_, p2_}, s2_ ] := Module[{diff = p2 - p1},
 	If[ segmentContainsPoint[ s2, p1 ], Return @ Missing["p1 is inside s2", {p1, s2}] ];
 	SelectFirst[ 
-		Table[{p1, p1 + i * Normalize @ diff}, {i, Total @ diff}], 
+		Table[{p1, p1 + i * Normalize @ diff}, {i, Abs @ Total @ diff}], 
 		segmentTouchesSegment[ #, s2]& 
 	]
 ]
@@ -460,7 +460,7 @@ segmentMinusSegment[ s1_, s2_ ] := Module[ {
 	},
 	Which[
 		Not @ MissingQ @ sub1, sub1,
-		Not @ MissingQ @ sub2, sub2,
+		Not @ MissingQ @ sub2, Reverse @ sub2,
 		True, s1
 	]
 ]
@@ -522,7 +522,6 @@ FindCut[ poly_, p1_, d_ ] := Module [{
 	(* Step 5a: check for a symmetrical polygon *)
 	If [ p1s == p1 && lastPoint == a && PolygonSideContainsPath[ poly, p2s ],
 		centroid = Mean[ poly ];
-		Echo[ centroid, "centroid" ];
 		Return @ Which[
 			PointInPolygon[ poly, centroid ] != "Internal",
 			Missing[ "centroid is not internal", centroid ],

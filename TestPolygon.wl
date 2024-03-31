@@ -321,6 +321,16 @@ TestCreate[
 ]
 
 
+TestCreate[
+	Polygon`Private`findMinimalCut[
+		{{0,0},{0,4},{1,4},{1,7},{2,7},{2,3},{1,3},{1,0}},
+		{{1,0},{1,4}}
+	]
+	,
+	{{1,3},{1,4}}
+]
+
+
 (* ::Subsubsection:: *)
 (*FindCut*)
 
@@ -330,7 +340,7 @@ With[{poly = {{0,0},{1,0},{1,1},{2,1}, {2,2},{6,2},{6,3},{5,3},{5,4},{4,4},{4,5}
 TestCreate[
 	FindCut[poly, poly[[ Range[7, 1, -1]]], First @ PolygonSideDirections[poly, 1]]
 	,
-	{{1,0},{1,4},{2,4},{2,5}}
+	{{1,1},{1,4},{2,4},{2,5}}
 ];
 
 TestCreate[
@@ -348,7 +358,7 @@ TestCreate[
 TestCreate[
 	FindAllCuts[poly]
 	,
-	{{{1,0},{1,4},{2,4},{2,5}}}
+	{{{1,1},{1,4},{2,4},{2,5}}}
 ];
 
 ];
