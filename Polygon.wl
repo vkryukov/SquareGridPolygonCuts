@@ -450,6 +450,38 @@ findFirstTouchPoint[ p1_, p2_ ] := Module[ { s1 = pathSegments @ p1, s2 = pathSe
 ];
 
 
+(* ::Text:: *)
+(*segmentMinusSegment takes two overlapping segments s1 and s2 such that s2 does not fully contain s1, and returns only the part of s1 outside of s2.*)
+
+
+segmentMinusSegment[ s1_, s2_ ] := Module[ {
+	sub1 = findTouchingSubsegment[ s1, s2],
+	sub2 = findTouchingSubsegment[ Reverse @ s1, s2]
+	},
+	Which[
+		Not @ MissingQ @ sub1, sub1,
+		Not @ MissingQ @ sub2, sub2,
+		True, s1
+	]
+]
+
+
+(* ::Text:: *)
+(*findMinimalCut takes a polygon and it's path that cuts the polygon in two parts, and returns the minimal sub-path that still cuts the polygon. (It could be just a sub-segment of one of the segments).*)
+
+
+findMinimalCut[ poly_, cut_ ] := Module[ { min = 1, max = Length @ cut, res },
+	While [ min < max && PolygonSideContainsSegment [ poly, cut[[ min ;; min + 1 ]] ], min++ ];
+	While [ max > min && PolygonSideContainsSegment [ poly, cut[[ max -1 ;; max ]] ], max-- ];
+	res = cut[[ min ;; max ]];
+	Do[
+		If [ segmentOverlapsSegment [ res[[1;;2]], s ], res[[1;;2]] = segmentMinusSegment[ res[[1;;2]], s ]];
+		If [ segmentOverlapsSegment [ res[[-2;;-1]], s ], res[[-2;;-1]] = segmentMinusSegment[ res[[-2;;-1]], s ]]
+	, {s, polygonSegments @ poly }];
+	res
+]
+
+
 (* ::Subsubsection:: *)
 (*Cutting algorithms*)
 
@@ -542,7 +574,7 @@ FindCut[ poly_, p1_, d_ ] := Module [{
 		( PolygonSideContainsSegment[ poly, # ] || PathContainsSegment [ p2s, # ]) &],
 		
 		(* normalize p2s by removing the head that lies on the side of polygon *)
-		While[ PolygonSideContainsSegment[ poly, p2s[[ ;; 2]] ], p2s = Rest @ p2s ];
+		p2s = findMinimalCut[ poly, p2s ];
 		With[{ f = First @ p2s, l = Last @ p2s },
 			If [ f[[1]] > l[[1]] || (f[[1]] == l[[1]] && f[[2]] > l[[2]]),
 				p2s = Reverse @ p2s]
