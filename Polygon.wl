@@ -249,18 +249,16 @@ orthogonalSegmentStrictlyIntersectsSegment[
 segmentContainsPoint[
 	s1: {{x1_Integer, y1_Integer}, {x2_Integer, y2_Integer}}
 	, {a1_Integer, b1_Integer}
-] := Module[ { min, max },
+] := Block[{},
 
 	assertSegment[ s1 ];
 	
 	Which[
 		x1 == x2,
-		{min, max} = MinMax[{y1, y2}];
-		a1 == x1 && min <= b1 <= max,
+		a1 == x1 && ((y1 <= b1 <= y2 || y2 <= b1 <= y1)),
 		
 		y1 == y2,
-		{min, max} = MinMax[{x1, x2}];
-		b1 == y1 && min <= a1 <= max
+		b1 == y1 && ((x1 <= a1 <= x2 || x2 <= a1 <= x1))
 	]
 ]
 
