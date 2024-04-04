@@ -91,7 +91,7 @@ PolygonDraw[points_] := Module[{x1,y1,x2,y2,d=0.2},
 		EdgeForm[Darker @ Gray]
 		, FaceForm[LightBlue]
 		, Polygon[points]
-		, MapIndexed[Text[Style[#2[[1]], 12, Bold], #1] &, points]
+		(*, MapIndexed[Text[Style[#2[[1]], 12, Bold], #1] &, points]*)
 		, Thin
 		, EdgeForm[LightGray]
 		, Table[ Line[{{x1 - d, y}, {x2 + d, y}}], {y, y1, y2}]
