@@ -591,13 +591,9 @@ FindCut[ poly_, p1_, d_ ] := Module [{
 (*2) Enumerate the distances between vertexes A and B from highest to lowest, starting from N/2 where N is the number of vertices.*)
 
 
-Options[FindAllCuts] = {"Solutions" -> 1};
-
-
-FindAllCuts[ poly_, OptionsPattern[] ] := Module[{ 
+FindAllCuts[ poly_, maxSolutions_Integer ] := Module[{ 
 		n = Length @ poly
 		, halfN = Ceiling[ Length @ poly / 2 ]
-		, max = OptionValue["Solutions"]
 		, count = 0
 		, cut
 	},
@@ -606,10 +602,10 @@ FindAllCuts[ poly_, OptionsPattern[] ] := Module[{
 		Last @ Reap[
 			Do [
 				cut = FindCut[ poly, poly[[ p ]], d ];
-				If[Not @ MissingQ[ cut ],
+				If[ Not @ MissingQ[ cut ],
 					count++;
 					Sow[ cut ];
-					If[ count > max, Break[] ]
+					If[ count >= maxSolutions, Break[] ]
 				]
 				, {dist, halfN, 1, -1}
 				, {a, 1, n}
@@ -619,6 +615,9 @@ FindAllCuts[ poly_, OptionsPattern[] ] := Module[{
 		{} 
 	]
 ];
+
+
+FindAllCuts[ poly_ ] := FindAllCuts[ poly, 1 ];
 
 
 (* ::Subsubsection:: *)
