@@ -585,24 +585,39 @@ FindCut[ poly_, p1_, d_ ] := Module [{
 ];
 
 
-FindAllCuts[ poly_ ] := Module[{ 
-		n = Length @ poly, 
-		halfN = Ceiling[ Length @ poly / 2 ] 
+(* ::Text:: *)
+(*There are several ideas how to make FindCongruentBisections faster:*)
+(*1) Stop after finding a certain number of solutions (default is 1).*)
+(*2) Enumerate the distances between vertexes A and B from highest to lowest, starting from N/2 where N is the number of vertices.*)
+
+
+Options[FindAllCuts] = {"Solutions" -> 1};
+
+
+FindAllCuts[ poly_, OptionsPattern[] ] := Module[{ 
+		n = Length @ poly
+		, halfN = Ceiling[ Length @ poly / 2 ]
+		, max = OptionValue["Solutions"]
+		, count = 0
+		, cut
 	},
 	
-	Union @ DeleteMissing @ Flatten[
-		Table[ 
-			If [ i == j || Abs[i - j] > halfN, 
-				Missing[],
-				FindCut[ poly, poly[[ p ]], d ]]
-			,
-			{i, 1, n},
-			{j, 1, n},
-			{p, CyclicRange[n, i, j]},
-			{d, PolygonSideDirections[poly, j]}]
-		,
-		3
-	]	
+	Union @ First [ 
+		Last @ Reap[
+			Do [
+				cut = FindCut[ poly, poly[[ p ]], d ];
+				If[Not @ MissingQ[ cut ],
+					count++;
+					Sow[ cut ];
+					If[ count > max, Break[] ]
+				]
+				, {dist, halfN, 1, -1}
+				, {a, 1, n}
+				, {p, CyclicRange[n, a, Mod[ a + dist - 1, n ] + 1 ]}
+				, {d, PolygonSideDirections[ poly, Mod[ a + dist - 1, n ] + 1 ]}
+			]], 
+		{} 
+	]
 ];
 
 
