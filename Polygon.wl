@@ -246,21 +246,23 @@ orthogonalSegmentStrictlyIntersectsSegment[
 ];
 
 
-segmentContainsPoint[
-	s1: {{x1_Integer, y1_Integer}, {x2_Integer, y2_Integer}}
-	, {a1_Integer, b1_Integer}
-] := Block[{},
+segmentContainsPoint = FunctionCompile[
+	Function[{
+		Typed[x1,"MachineInteger"], Typed[y1,"MachineInteger"],
+		Typed[x2,"MachineInteger"], Typed[y2,"MachineInteger"],
+		Typed[a1,"MachineInteger"], Typed[b1,"MachineInteger"]
+	},
 
-	assertSegment[ s1 ];
-	
 	Which[
 		x1 == x2,
 		a1 == x1 && ((y1 <= b1 <= y2 || y2 <= b1 <= y1)),
 		
 		y1 == y2,
-		b1 == y1 && ((x1 <= a1 <= x2 || x2 <= a1 <= x1))
-	]
-]
+		b1 == y1 && ((x1 <= a1 <= x2 || x2 <= a1 <= x1)),
+
+	True, True
+	]]
+];
 
 
 segmentOverlapsSegment[
@@ -302,10 +304,10 @@ segmentTouchesSegment[
 	assertSegment[ s2 ];
 	
 	Or @@ {
-		segmentContainsPoint[s1, {a1, b1}],
-		segmentContainsPoint[s1, {a2, b2}],
-		segmentContainsPoint[s2, {x1, y1}],
-		segmentContainsPoint[s2, {x2, y2}]
+		segmentContainsPoint[x1, y1, x2, y2, a1, b1],
+		segmentContainsPoint[x1, y1, x2, y2, a2, b2],
+		segmentContainsPoint[a1, b1, a2, b2, x1, y1],
+		segmentContainsPoint[a1, b1, a2, b2, x2, y2]
 	} && Not @ segmentOverlapsSegment[ s1, s2 ]
 ];
 
@@ -331,7 +333,7 @@ PointInPolygon[polygon_, point: {x_, y_}] := Module[{
 		, touchingIntersects
 	},
 	
-	If[ AnyTrue[ segments, segmentContainsPoint[#, point]& ], Return[ "Side" ]];
+	If[ AnyTrue[ segments, segmentContainsPoint[#[[1,1]], #[[1,2]], #[[2,1]], #[[2,2]], point[[1]], point[[2]]]& ], Return[ "Side" ]];
 	
 	(* the point is either internal or external *)
 	If [ x <= min || x >= max, Return ["External"] ];
@@ -374,7 +376,7 @@ PathWithinPolygon[ polygon_, path_ ] := AllTrue [ pathSegments @ path, SegmentWi
 
 polygonSideContainsPoint[ poly_, point_ ] := AnyTrue[ 
 	polygonSegments @ poly, 
-	segmentContainsPoint [ #, point ]& 
+	segmentContainsPoint [ #[[1,1]], #[[1,2]], #[[2,1]], #[[2,2]], point[[1]], point[[2]] ]& 
 ];
 
 
@@ -387,7 +389,11 @@ findSurroundingVertices[ poly_, point_ ] := Module[{
 	If [ c1 === {},
 		(* p2s lies on the side - let's find this side *)
 		Do[
-			If [ segmentContainsPoint[ polySegments[[ i ]], point ],
+			If [ segmentContainsPoint[ 
+					polySegments[[ i, 1, 1 ]], polySegments[[ i, 1, 2 ]],
+					polySegments[[ i, 2, 1 ]], polySegments[[ i, 2, 2 ]],
+					point[[1]], point[[2]] 
+				],
 				c1 = i;
 				c2 = Mod[ i, Length @ polySegments ] + 1;
 				Return[]
@@ -420,7 +426,7 @@ findSurroundingVertices[ poly_, point_ ] := Module[{
 
 
 findTouchingSubsegment[ s1: {p1_, p2_}, s2_ ] := Module[{diff = p2 - p1},
-	If[ segmentContainsPoint[ s2, p1 ], Return @ Missing["p1 is inside s2", {p1, s2}] ];
+	If[ segmentContainsPoint[ s2[[1,1]], s2[[1,2]], s2[[2,1]], s2[[2,2]], p1[[1]], p1[[2]] ], Return @ Missing["p1 is inside s2", {p1, s2}] ];
 	SelectFirst[ 
 		Table[{p1, p1 + i * Normalize @ diff}, {i, Abs @ Total @ diff}], 
 		segmentTouchesSegment[ #, s2]& 
@@ -435,7 +441,7 @@ findTouchingSubsegment[ s1: {p1_, p2_}, s2_ ] := Module[{diff = p2 - p1},
 findFirstTouchPoint[ p1_, p2_ ] := Module[ { s1 = pathSegments @ p1, s2 = pathSegments @ p2 },
 	Catch @ Do[
 		If[ segmentTouchesSegment[ s1[[i]], s2[[j]] ] && (
-			 i != 1 || Not @ segmentContainsPoint[ s2[[j]], s1[[i, 1]] ]
+			 i != 1 || Not @ segmentContainsPoint[ s2[[j,1,1]],s2[[j,1,2]],s2[[j,2,1]],s2[[j,2,2]], s1[[i,1,1]], s1[[i,1,2]]  ]
 			), Throw @ p1[[ ;; i+1 ]] ];
 		If[ orthogonalSegmentStrictlyIntersectsSegment[ s1[[i]], s2[[j]] ], Throw @ {} ];
 		If[ segmentOverlapsSegment[ s1[[i]], s2[[j]] ], 
