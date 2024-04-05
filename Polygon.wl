@@ -185,9 +185,6 @@ SegmentContainsSegment[
 	, s2: {{a1_Integer, b1_Integer}, {a2_Integer, b2_Integer}} 
 ] := Module[ {min, max},
 	
-	assertSegment[ s1 ];
-	assertSegment[ s2 ];
-	
 	Which[
 		x1 == x2,
 		{min, max} = MinMax[{y1, y2}];
@@ -229,19 +226,16 @@ orthogonalSegmentStrictlyIntersectsSegment[
 	, s2: {{a1_Integer, b1_Integer}, {a2_Integer, b2_Integer}} 
 ] := Module[ {minXY, maxXY, minAB, maxAB},
 	
-	assertSegment[ s1 ];
-	assertSegment[ s2 ];
-	
 	Which[
 		x1 == x2,
-		{minXY, maxXY} = MinMax[{y1, y2}];
-		{minAB, maxAB} = MinMax[{a1, a2}];
-		minAB < x1 < maxAB && b1 == b2 && minXY < b1 < maxXY,
+		b1 == b2 && 
+		((a1 < x1 < a2) || (a2 < x1 < a1)) &&
+		((y1 < b1 < y2) || (y2 < b1 < y1)),
 		
 		y1 == y2,
-		{minXY, maxXY} = MinMax[{x1, x2}];
-		{minAB, maxAB} = MinMax[{b1, b2}];
-		minAB < y1 < maxAB && a1 == a2 && minXY < a1 < maxXY
+		a1 == a2 &&
+		((b1 < y1 < b2) || (b2 < y1 < b2)) &&
+		((x1 < a1 < x2) || (x2 < a1 < x1))
 	]
 ];
 
@@ -268,28 +262,29 @@ segmentContainsPoint = FunctionCompile[
 segmentOverlapsSegment[
 	s1: {{x1_Integer, y1_Integer}, {x2_Integer, y2_Integer}}
 	, s2: {{a1_Integer, b1_Integer}, {a2_Integer, b2_Integer}}
-] := Module[ {minXY, maxXY, minAB, maxAB},
-
-	assertSegment[ s1 ];
-	assertSegment[ s2 ];
+] := Module[ {minXY, maxXY},
 
 	Which[
 		x1 == x2,
-		{minXY, maxXY} = MinMax[{y1, y2}];
-		{minAB, maxAB} = MinMax[{b1, b2}];
+		If [ y1 < y2, 
+			minXY = y1; maxXY = y2,
+			minXY = y2; maxXY = y1
+		];
 		a1 == a2 == x1 && (
-			minXY < minAB < maxXY ||
-			minXY < maxAB < maxXY ||
-			minAB <= minXY <= maxXY <= maxAB
+			minXY < b1 < maxXY ||
+			minXY < b2 < maxXY ||
+			((b1 <= minXY || b2 <= minXY) && (maxXY <= b1 || maxXY <= b2))
 		),
 		
 		y1 == y2,
-		{minXY, maxXY} = MinMax[{x1, x2}];
-		{minAB, maxAB} = MinMax[{a1, a2}];
+		If [ x1 < x2, 
+			minXY = x1; maxXY = x2,
+			minXY = x2; maxXY = x1
+		];
 		b1 == b2 == y1 && (
-			minXY < minAB < maxXY ||
-			minXY < maxAB < maxXY ||
-			minAB <= minXY <= maxXY <= maxAB
+			minXY < a1 < maxXY ||
+			minXY < a2 < maxXY ||
+			((a1 <= minXY || a2 <= minXY) && (maxXY <= a1 || maxXY <= a2))
 		)
 	]
 ]
@@ -299,9 +294,6 @@ segmentTouchesSegment[
 	s1: {{x1_Integer, y1_Integer}, {x2_Integer, y2_Integer}}
 	, s2: {{a1_Integer, b1_Integer}, {a2_Integer, b2_Integer}} 
 ] := Module[ {},
-
-	assertSegment[ s1 ];
-	assertSegment[ s2 ];
 	
 	Or @@ {
 		segmentContainsPoint[x1, y1, x2, y2, a1, b1],
