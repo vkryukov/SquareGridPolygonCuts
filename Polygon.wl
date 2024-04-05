@@ -259,10 +259,15 @@ segmentContainsPoint = FunctionCompile[
 ];
 
 
-segmentOverlapsSegment[
-	s1: {{x1_Integer, y1_Integer}, {x2_Integer, y2_Integer}}
-	, s2: {{a1_Integer, b1_Integer}, {a2_Integer, b2_Integer}}
-] := Module[ {minXY, maxXY},
+segmentOverlapsSegment = FunctionCompile[
+	Function[{
+		Typed[s1, "NumericArray"::["MachineInteger", 2]],
+		Typed[s2, "NumericArray"::["MachineInteger", 2]]
+		},
+		
+	Block[{x1,y1,x2,y2,a1,b1,a2,b2,minXY,maxXY},
+		x1 = s1[[1,1]]; y1 = s1[[1,2]]; x2 = s1[[2,1]]; y2 = s1[[2,2]];
+		a1 = s2[[1,1]]; b1 = s2[[1,2]]; a2 = s2[[2,1]]; b2 = s2[[2,2]];
 
 	Which[
 		x1 == x2,
@@ -285,9 +290,12 @@ segmentOverlapsSegment[
 			minXY < a1 < maxXY ||
 			minXY < a2 < maxXY ||
 			((a1 <= minXY || a2 <= minXY) && (maxXY <= a1 || maxXY <= a2))
-		)
+		),
+		
+		True, True
 	]
 ]
+]];
 
 
 segmentTouchesSegment[
@@ -343,7 +351,6 @@ PointInPolygon[polygon_, point: {x_, y_}] := Module[{
 
 
 SegmentWithinPolygon[polygon_, s: {{x1_, y1_}, {x2_, y2_}}] := Module[ {},
-	assertSegment[s];
 	
 	Which[
 		x1 == x2,
