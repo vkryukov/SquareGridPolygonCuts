@@ -190,21 +190,22 @@ followAlongSameDirection[ poly_, a_, b_, clockwise_?BooleanQ ] := Module[{
 	curA = a;
 	curB = b; (* index of a vertex or side where the end of Pb is; irrelevant once Pb goes inside *)
 	pointB = poly[[ b ]];
-	{res, {pa, pb}} = Reap [
+	{res, {pa, pb}} = Reap @ Catch [
 		Sow[ poly[[ a ]], "a" ];
 		Sow[ poly[[ b ]], "b" ];
 		
 		While[ curA != b,
-			Echo[{curA, curB, state}];
+			Echo[{curA, curB, pointB, state}];
 			Sow [ poly[[ inc @ a ]], "a" ];
-			dirB = rotate @ sides[[a, 1]];
+			dirB = rotate @ sides[[curA, 1]];
 			
 			Switch[ state,
 				"vertex",
+				Echo[dirB, "dirB"];
 				Which[
 					(* we are going outside *)
 					angles[[ curB ]] == \[Pi]/2 && (dirB == - sides[[curB, 1]] || dirB == sides[[curB, 2]]),
-					Return["outside"],
+					Throw["outside"],
 					
 					(* we are moving along the side *)
 					dirB == sides[[curB, 1]],
@@ -240,7 +241,7 @@ followAlongSameDirection[ poly_, a_, b_, clockwise_?BooleanQ ] := Module[{
 				Which[
 					(* we are steping outside *)
 					dirB == sides[[curB, 2]],
-					Return["outside"],
+					Throw["outside"],
 					
 					(* we are steping inside *)
 					True,
@@ -250,14 +251,14 @@ followAlongSameDirection[ poly_, a_, b_, clockwise_?BooleanQ ] := Module[{
 			
 			If[ state == "inside",
 				nextB = findFirstIntersection[ poly, { pointB, pointB + dirB * stepB } ];
-				If[ nextB == {},
+				If[ nextB === Null,
 					(* no intersection - we are still inside *)
 					pointB = pointB + dirB * stepB;
 					Sow[ pointB, "b" ],
 					
 					(* found intersection - stop and return, we found a candidate *)
 					Sow[ nextB, "b"];
-					Return["candidate"]
+					Throw["candidate"]
 				]
 			];
 			
