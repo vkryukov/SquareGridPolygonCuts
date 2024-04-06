@@ -8,13 +8,13 @@ SetUsage[DrawGrid,
 
 
 SetUsage[DrawPolygon,
-"DrawPolygon[points$] draws a polygon of points$ on a square grid."]
+"DrawPolygon[points$] draws a polygon of points$ on a square grid."];
 
 
 Begin["`Private`"];
 
 
-(* ::Subsubsection::Closed:: *)
+(* ::Subsubsection:: *)
 (*Drawing primitives*)
 
 
@@ -27,19 +27,19 @@ DrawGrid[ {x1_, x2_ }, {y1_, y2_} ]:= With[ {d = 0.2},
 ];
 
 
-Options[DrawPolygon] = { "NumberedVertices" -> False }
+Options[DrawPolygon] = { "Numbered" -> False, "Pad" -> 0 };
 
 
-DrawPolygon[ points_, OptionsPattern[] ] := Module[ {},
+DrawPolygon[ points_, OptionsPattern[] ] := Module[ { p = OptionValue["Pad"] },
 	Show[ 
 		Graphics[ {
 			EdgeForm[Darker @ Gray], FaceForm[ LightBlue ], Polygon @ points,
-			If[ OptionValue["NumberedVertices"], 
+			If[ OptionValue["Numbered"], 
 				MapIndexed[Text[Style[#2[[1]], 12, Bold], #1] &, points],
 				{}
 			]
 		} ],
-		DrawGrid [ MinMax @ points[[All, 1]], MinMax @ points[[All, 2]] ]
+		DrawGrid [ MinMax @ points[[All, 1]] + { -p, p }, MinMax @ points[[All, 2]] + { -p, p } ]
 	]
 ];
 
