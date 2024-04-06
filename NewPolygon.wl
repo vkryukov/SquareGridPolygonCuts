@@ -217,7 +217,7 @@ followAlongSameDirection[ poly_, a_, b_, clockwise_?BooleanQ ] := Module[{
 		Sow[ poly[[ b ]], "b" ];
 		
 		While[ curA != b,
-			Sow [ poly[[ inc @ a ]], "a" ];
+			Sow [ poly[[ inc @ curA ]], "a" ];
 			dir = rotate @ sides[[curA, 1]];
 			step = stepLength @ curA;
 			
