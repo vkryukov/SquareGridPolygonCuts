@@ -70,5 +70,76 @@ polygonWithMidPoints[ points_ ] := Module[ {
 ];
 
 
+(* ::Text:: *)
+(*rotate90right and rotate90left rotate a unit vector clockwise and counter-clockwise.*)
+
+
+rotate90left[ {x_, y_} ] := Which[
+	x == 1, {0, 1},
+	x == -1, {0, -1},
+	y == 1, {-1, 0},
+	True, {1, 0}
+];
+
+
+rotate90right[ {x_, y_} ] := Which[
+	x == 1, {0, -1},
+	x == -1, {0, 1},
+	y == 1, {1, 0},
+	True, {-1, 0}
+];
+
+
+(* ::Text:: *)
+(*add  returns a+b modulo n but starts at 1.*)
+
+
+add[ n_, a_, b_ ] := ( Mod[ a + b - 1, n ] + 1 );
+
+
+(* ::Subsubsection:: *)
+(*Follow along the side*)
+
+
+(* ::Text:: *)
+(*orientedSides returns a list of oriented sides following along the sides of the polygon in clockwise (if clockwise=True) or counter-clockwise order.*)
+
+
+orientedSides[ points_, clockwise_?BooleanQ ] := Module[{
+	n = Length @ points,
+	bottomLeft = First @ Sort @ points,
+	bottomLeftId, topInc, inc, rotate, res
+	},
+	
+	bottomLeftId = Position[ points, bottomLeft ][[ 1, 1 ]];
+	
+	(* how to increment indexes to move to the top vertex from here *) 
+	topInc = With[ {next = points[[ add[ n, bottomLeftId, 1] ]]},
+		If [ next[[1]] == bottomLeft[[1]], 1, -1 ] ];
+	
+	If [ clockwise,
+		(* we need to move to the top vertex from here *)
+		inc = topInc;
+		rotate = rotate90left,
+		
+		(* we need to mofe to the right vertex from here *)
+		inc = -topInc;
+		rotate = rotate90right
+	];
+	
+	res = Table[ 
+		With[ { 
+			this = points[[ add[ n, bottomLeftId, i * inc ] ]],
+			next = points[[ add[ n, bottomLeftId, (i + 1) * inc ] ]]
+			},
+		{ Normalize[ next - this ], rotate @ Normalize[ next - this] }],
+		{i, 0, n-1}];
+		
+	If[ inc == 1, 
+		RotateRight[ res, bottomLeftId - 1 ],
+		Reverse @ RotateLeft[ res, bottomLeftId ] ]
+];
+
+
 End[];
 EndPackage[];
