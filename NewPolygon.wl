@@ -11,6 +11,10 @@ SetUsage[DrawPolygon,
 "DrawPolygon[points$] draws a polygon of points$ on a square grid."];
 
 
+SetUsage[DrawPolygonWithLines,
+"DrawPolygon[points$, lines$] draws a polygon of points$ and lines$ on a square grid."];
+
+
 Begin["`Private`"];
 
 
@@ -42,6 +46,21 @@ DrawPolygon[ points_, OptionsPattern[] ] := Module[ { p = OptionValue["Pad"] },
 		DrawGrid [ MinMax @ points[[All, 1]] + { -p, p }, MinMax @ points[[All, 2]] + { -p, p } ]
 	]
 ];
+
+
+Options[DrawPolygonWithLines] = Options[DrawPolygon];
+
+
+DrawPolygonWithLines[ points_, lines_, opts: OptionsPattern[]] :=
+	Show[
+		DrawPolygon[ points, opts ],
+		Graphics[{
+			Thickness[0.01], 
+			MapThread[{#1, Line[#2]}&,
+				{Table[ColorData[3][n], {n, Length @ lines}],
+				lines}]
+		}]
+	];
 
 
 (* ::Subsubsection:: *)
