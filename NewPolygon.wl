@@ -298,6 +298,30 @@ followAlongSameDirection[ poly_, a_, b_, clockwise_?BooleanQ ] := Module[{
 ];
 
 
+(* ::Text:: *)
+(*findFirstIntersection gets a polygon and two points a and b, such that either a is inside or a is on the side and a->b is going inside, and returns the coordinate of the first intersection of a->b with sides of polygon, or Null if there is no intersection (= b is still inside).*)
+
+
+findFirstIntersection[ poly_, { a_, b_ }] := Module[{ 
+		d = Normalize [ b - a ],
+		l = Total @ Abs [ b - a ],
+		i = 1,
 		sides = cyclicalPairs @ poly,
+		pointOnSide 
+	},
+	
+	pointOnSide[ {{a1_, b1_}, {a2_, b2_}}, {x_, y_} ] := (
+		(a1 == x == a2 && (b1 <= y <= b2 || b2 <= y <= b1)) ||
+		(b1 == y == b2 && (a1 <= x <= a2 || a2 <= x <= a1))
+		);
+		
+	Catch @ Do[
+		If [ pointOnSide[ s, a + i * d ], Throw[ a + i * d] ] 
+		, {i, l}
+		, {s, sides}
+	]
+];
+
+
 End[];
 EndPackage[];
