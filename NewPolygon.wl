@@ -44,5 +44,36 @@ DrawPolygon[ points_, OptionsPattern[] ] := Module[ {},
 ];
 
 
+(* ::Subsubsection:: *)
+(*Utilities*)
+
+
+(* ::Text:: *)
+(*polygonSegments returns a list of line segments in the polygon.*)
+
+
+cyclicPairs[ lst_ ] := Partition[ Append[ lst, First @ lst ], 2, 1 ];
+
+
+(* ::Text:: *)
+(*polygonWithMidPoints adds middle points to those line segments whose two angles sum up to 180\[Degree].*)
+
+
+polygonWithMidPoints[ points_ ] := Module[ {
+	n = Length @ points, 
+	angles = cyclicPairs @ PolygonAngle[ Polygon @ points ],
+	segments = cyclicPairs @ points,
+	f
+	},
+	
+	f[ { {a1_, a2_}, {p1_, p2_} }, {i_} ] := If[ a1 == a2 == \[Pi]/2, {i + 0.5, (p1 + p2) / 2}, Nothing ];
+	
+	Last /@ SortBy[ Join[
+		MapIndexed[ {First @ #2, #1}&, points ],
+		MapIndexed[ f, MapThread[List, {angles, segments } ] ]
+	], First ]
+];
+
+
 End[];
 EndPackage[];
