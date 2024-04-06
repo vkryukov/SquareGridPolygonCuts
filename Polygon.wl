@@ -500,7 +500,7 @@ findMinimalCut[ poly_, cut_ ] := Module[ { min = 1, max = Length @ cut, res },
 (*5b. Otherwise, if either (a) P2s's end point is not on the side, (b) P2s goes outside of the polygon, (c) P2s goes along the sides of the polygon (e.g., doesn't go "inside" the polygon), stop:  there is not cut that is congruent to (some part of) P1.*)
 (*6. Otherwise, P2s is a valid cut. We now have to check whether it divided the polygon into two equal parts.*)
 (*7. For this, we need to extend P2s by adding a path from the end of P2s that goes on the side of the polygon and goes back into B, but does NOT go into A. (There is only one such path). Let's call this path P2f.*)
-(*8. Build P1f: a path that starts in A, goes in the same direction as P1, and is congruent to P2f. If this path completely lies within the sides of the polygon plus P2s, and P1f with P2f contain all the vertices of the polygon, stop: P2s is the answer. Otherwise, stop:  there is not cut that is congruent to (some part of) P1.*)
+(*8. Build P1f: a path that starts in A, goes in the same direction as P1, and is congruent to P2f. If this path completely lies within the sides of the polygon plus P2s, and P1f with P2f contain all the vertices of the polygon, stop: P2s is the answer. Otherwise, stop:  there is no cut that is congruent to (some part of) P1.*)
 
 
 FindCut[ poly_, p1_, d_ ] := Module [{ 
