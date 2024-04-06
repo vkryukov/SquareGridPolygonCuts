@@ -35,7 +35,7 @@ DrawPolygon[ points_, OptionsPattern[] ] := Module[ { p = OptionValue["Pad"] },
 		Graphics[ {
 			EdgeForm[Darker @ Gray], FaceForm[ LightBlue ], Polygon @ points,
 			If[ OptionValue["Numbered"], 
-				MapIndexed[Text[Style[#2[[1]], 12, Bold], #1] &, points],
+				MapIndexed[Text[Style[#2[[1]], 12, Bold], #1 + {-0.1, 0.15}] &, points],
 				{}
 			]
 		} ],
@@ -56,9 +56,9 @@ cyclicalPairs[ lst_ ] := Partition[ Append[ lst, First @ lst ], 2, 1 ];
 
 
 polygonWithMidPoints[ points_ ] := Module[ {
-	angles = cyclicalPairs @ PolygonAngle[ Polygon @ points ],
-	segments = cyclicalPairs @ points,
-	f
+		angles = cyclicalPairs @ PolygonAngle[ Polygon @ points ],
+		segments = cyclicalPairs @ points,
+		f
 	},
 	
 	f[ { {a1_, a2_}, {p1_, p2_} }, {i_} ] := If[ a1 == a2 == \[Pi]/2, {i + 0.5, (p1 + p2) / 2}, Nothing ];
@@ -106,9 +106,9 @@ add[ n_, a_, b_ ] := ( Mod[ a + b - 1, n ] + 1 );
 
 
 orientedSides[ points_, clockwise_?BooleanQ ] := Module[{
-	n = Length @ points,
-	bottomLeft = First @ Sort @ points,
-	bottomLeftId, topInc, inc, rotate, res
+		n = Length @ points,
+		bottomLeft = First @ Sort @ points,
+		bottomLeftId, topInc, inc, rotate, res
 	},
 	
 	bottomLeftId = Position[ points, bottomLeft ][[ 1, 1 ]];
@@ -138,6 +138,143 @@ orientedSides[ points_, clockwise_?BooleanQ ] := Module[{
 	If[ inc == 1, 
 		RotateRight[ res, bottomLeftId - 1 ],
 		Reverse @ RotateLeft[ res, bottomLeftId ] ]
+];
+
+
+(* ::Text:: *)
+(*followAlongSameDirection takes indexes of two points, a and b, and a direction (clockwise or counter-clockwise), and starting following path Pa along the sides in a given direction from point a, and build a parallel congruent path Pb from point b, until one of the following happens:*)
+(**)
+(*1) Pb goes outside of the polygon: discard the attempt*)
+(*2) Pb goes inside the polygon: wait for it to emerge outside, and receive a candidate.*)
+(*3) Pa reached b: discard the attempt. NOTE: we can ignore the case with a rotational symmetry (or mirror symmetry), as we can detect this at the very start before searching for cuts.*)
+
+
+followAlongSameDirection[ poly_, a_, b_, clockwise_?BooleanQ ] := Module[{
+		sides = orientedSides[ poly, clockwise ],
+		angles = cyclicalPairs @ PolygonAngle[ Polygon @ poly ],
+		n = Length @ poly,
+		inc, rotate, stepLength,
+		state, curA, curB, dirB, pointB, stepA, stepB, nextB,
+		res, pa, pb
+	},
+	
+	(*  inc returns the index of the next point along the side in a choosen direction  *) 
+	If[ sides[[1, 1]] == Normalize[ poly[[2]] - poly[[1]] ],
+		inc[i_] := add[ n, i,  1 ];
+		inc[i_, x_] := add [n, i, x ],
+		
+		inc[i_] := add[ n, i, -1 ];
+		inc[i_, x_] := add[ n, i, -x ]
+	];
+			
+	(*  rotate transforms a direction of Pa to a congruent direction for Pb  *)
+	rotate = Which [
+		sides[[ a, 1 ]] == sides[[ b, 1 ]],
+		Identity,
+		
+		rotate90left @ sides[[ a, 1 ]] == sides[[ b, 1 ]],
+		rotate90left, 
+		
+		rotate90right @ sides[[ a, 1 ]] == sides[[ b, 1 ]],
+		rotate90right, 
+		
+		True, (* rotate 180\[Degree] *)
+		(- # )& 
+	];
+	
+	(*  length of the side at point x in move direction  *)
+	stepLength[ i_ ] := Total [ Abs [ poly[[ inc @ i ]] - poly[[ i ]] ] ];
+	
+	
+	state = "vertex"; (* state can be one of "vertex", "side", "inside" *)
+	curA = a;
+	curB = b; (* index of a vertex or side where the end of Pb is; irrelevant once Pb goes inside *)
+	pointB = poly[[ b ]];
+	{res, {pa, pb}} = Reap [
+		Sow[ poly[[ a ]], "a" ];
+		Sow[ poly[[ b ]], "b" ];
+		
+		While[ curA != b,
+			Echo[{curA, curB, state}];
+			Sow [ poly[[ inc @ a ]], "a" ];
+			dirB = rotate @ sides[[a, 1]];
+			
+			Switch[ state,
+				"vertex",
+				Which[
+					(* we are going outside *)
+					angles[[ curB ]] == \[Pi]/2 && (dirB == - sides[[curB, 1]] || dirB == sides[[curB, 2]]),
+					Return["outside"],
+					
+					(* we are moving along the side *)
+					dirB == sides[[curB, 1]],
+					stepA = stepLength @ curA;
+					stepB = stepLength @ curB;
+					Which[
+						(* we are in the next vertex *)
+						stepA == stepB,
+						curB = inc @ curB;
+						pointB = poly[[ curB ]];
+						Sow[ pointB, "b"],
+						
+						(* we are in the middle of the side *)
+						stepB < stepA,
+						state = "side";
+						pointB = poly[[ curB ]] + stepB * dirB;
+						Sow[ pointB, "b" ],
+						
+						(* stepA < stepB; we are steping inside the polygon *)
+						True,
+						pointB = poly[[ curB ]] + stepA * dirB;
+						stepB = stepB - stepA;
+						state = "inside";
+						Sow[ pointB, "b" ]
+					],
+					
+					(* we are steping inside the polygon from the vertex *)
+					True,
+					state = "inside"
+				],
+				
+				"side",
+				Which[
+					(* we are steping outside *)
+					dirB == sides[[curB, 2]],
+					Return["outside"],
+					
+					(* we are steping inside *)
+					True,
+					state = "step inside"
+				]
+			];
+			
+			If[ state == "inside",
+				nextB = findFirstIntersection[ poly, { pointB, pointB + dirB * stepB } ];
+				If[ nextB == {},
+					(* no intersection - we are still inside *)
+					pointB = pointB + dirB * stepB;
+					Sow[ pointB, "b" ],
+					
+					(* found intersection - stop and return, we found a candidate *)
+					Sow[ nextB, "b"];
+					Return["candidate"]
+				]
+			];
+			
+			curA = inc @ curA
+		];
+	];
+	
+	Which[
+		res === "candidate",
+		pb,
+		
+		res === "outside",
+		Missing["pb stepped outside", {pa, pb}],
+		
+		True,
+		Missing["pa reached b", {pa, pb}]
+	]
 ];
 
 
