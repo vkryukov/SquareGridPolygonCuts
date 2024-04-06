@@ -298,5 +298,6 @@ followAlongSameDirection[ poly_, a_, b_, clockwise_?BooleanQ ] := Module[{
 ];
 
 
+		sides = cyclicalPairs @ poly,
 End[];
 EndPackage[];
