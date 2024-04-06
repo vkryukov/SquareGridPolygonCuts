@@ -73,7 +73,7 @@ in the direction dir$, or return Missing[] if it is not found"];
 
 
 SetUsage[FindAllCuts,
-"FindAllCuts[polygon$] returns a list of all possible cuts of polygon@ into two congruent sub-polygons"];
+"FindAllCuts[polygon$] returns a list of all possible cuts of polygon$ into two congruent sub-polygons"];
 
 
 Begin["`Private`"];
