@@ -14,7 +14,7 @@ SetUsage[DrawPolygon,
 Begin["`Private`"];
 
 
-(* ::Subsubsection:: *)
+(* ::Subsubsection::Closed:: *)
 (*Drawing primitives*)
 
 
@@ -48,11 +48,7 @@ DrawPolygon[ points_, OptionsPattern[] ] := Module[ {},
 (*Utilities*)
 
 
-(* ::Text:: *)
-(*polygonSegments returns a list of line segments in the polygon.*)
-
-
-cyclicPairs[ lst_ ] := Partition[ Append[ lst, First @ lst ], 2, 1 ];
+cyclicalPairs[ lst_ ] := Partition[ Append[ lst, First @ lst ], 2, 1 ];
 
 
 (* ::Text:: *)
@@ -60,9 +56,8 @@ cyclicPairs[ lst_ ] := Partition[ Append[ lst, First @ lst ], 2, 1 ];
 
 
 polygonWithMidPoints[ points_ ] := Module[ {
-	n = Length @ points, 
-	angles = cyclicPairs @ PolygonAngle[ Polygon @ points ],
-	segments = cyclicPairs @ points,
+	angles = cyclicalPairs @ PolygonAngle[ Polygon @ points ],
+	segments = cyclicalPairs @ points,
 	f
 	},
 	

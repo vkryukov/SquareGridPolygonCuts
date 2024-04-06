@@ -8,6 +8,12 @@ Needs["NewPolygon`"]
 
 
 TestCreate[
+	NewPolygon`Private`cyclicalPairs @ Range[5],
+	{{1,2},{2,3},{3,4},{4,5},{5,1}}
+]
+
+
+TestCreate[
 	NewPolygon`Private`polygonWithMidPoints[ {{0,0},{1,0},{1,1},{0,1}} ],
 	{{0,0},{1/2,0},{1,0},{1,1/2},{1,1},{1/2,1},{0,1},{0,1/2}}
 ];
