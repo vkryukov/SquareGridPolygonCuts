@@ -170,10 +170,13 @@ orientedSides[ points_, clockwise_?BooleanQ ] := Module[{
 
 followAlongSameDirection[ poly_, a_, b_, clockwise_?BooleanQ ] := Module[{
 		sides = orientedSides[ poly, clockwise ],
-		angles = cyclicalPairs @ PolygonAngle[ Polygon @ poly ],
+		(*  PolygonAngle does NOT give the list of angles in the same order as poly points, by default.
+			Therefore, we need to make sure that the order is explicit.
+			Example: poly = {{0,0},{5,0},{5,-2},{6,-2},{6,-7},{4,-7},{4,-4},{0,-4}} *)
+		angles = Table[PolygonAngle[ Polygon @ poly, poly[[i]] ], {i, Length @ poly}],
 		n = Length @ poly,
 		inc, rotate, stepLength,
-		state, curA, curB, dirB, pointB, stepA, stepB, nextB,
+		state, curA, curB, dir, pointB, step, lenB, nextB,
 		res, pa, pb
 	},
 	
@@ -214,39 +217,37 @@ followAlongSameDirection[ poly_, a_, b_, clockwise_?BooleanQ ] := Module[{
 		Sow[ poly[[ b ]], "b" ];
 		
 		While[ curA != b,
-			Echo[{curA, curB, pointB, state}];
 			Sow [ poly[[ inc @ a ]], "a" ];
-			dirB = rotate @ sides[[curA, 1]];
+			dir = rotate @ sides[[curA, 1]];
+			step = stepLength @ curA;
 			
 			Switch[ state,
 				"vertex",
-				Echo[dirB, "dirB"];
 				Which[
 					(* we are going outside *)
-					angles[[ curB ]] == \[Pi]/2 && (dirB == - sides[[curB, 1]] || dirB == sides[[curB, 2]]),
+					angles[[ curB ]] === \[Pi]/2 && (dir == - sides[[curB, 1]] || dir == sides[[curB, 2]]),
 					Throw["outside"],
 					
 					(* we are moving along the side *)
-					dirB == sides[[curB, 1]],
-					stepA = stepLength @ curA;
-					stepB = stepLength @ curB;
+					dir === sides[[curB, 1]],
+					lenB = stepLength @ curB;
 					Which[
 						(* we are in the next vertex *)
-						stepA == stepB,
+						step == lenB,
 						curB = inc @ curB;
 						pointB = poly[[ curB ]];
-						Sow[ pointB, "b"],
-						
-						(* we are in the middle of the side *)
-						stepB < stepA,
-						state = "side";
-						pointB = poly[[ curB ]] + stepB * dirB;
 						Sow[ pointB, "b" ],
 						
-						(* stepA < stepB; we are steping inside the polygon *)
+						(* we are in the middle of the side *)
+						step < lenB,
+						state = "side";
+						pointB = poly[[ curB ]] + step * dir;
+						Sow[ pointB, "b" ],
+						
+						(* step > lenB; we are steping inside the polygon *)
 						True,
-						pointB = poly[[ curB ]] + stepA * dirB;
-						stepB = stepB - stepA;
+						pointB = poly[[ curB ]] + lenB * dir;
+						step = step - lenB;
 						state = "inside";
 						Sow[ pointB, "b" ]
 					],
@@ -259,20 +260,20 @@ followAlongSameDirection[ poly_, a_, b_, clockwise_?BooleanQ ] := Module[{
 				"side",
 				Which[
 					(* we are steping outside *)
-					dirB == sides[[curB, 2]],
+					dir == sides[[curB, 2]],
 					Throw["outside"],
 					
 					(* we are steping inside *)
 					True,
-					state = "step inside"
+					state = "inside"
 				]
 			];
 			
 			If[ state == "inside",
-				nextB = findFirstIntersection[ poly, { pointB, pointB + dirB * stepB } ];
+				nextB = findFirstIntersection[ poly, { pointB, pointB + dir * step } ];
 				If[ nextB === Null,
 					(* no intersection - we are still inside *)
-					pointB = pointB + dirB * stepB;
+					pointB = pointB + dir * step;
 					Sow[ pointB, "b" ],
 					
 					(* found intersection - stop and return, we found a candidate *)
