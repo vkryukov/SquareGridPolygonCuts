@@ -83,7 +83,7 @@ orderedPolygonAngle[ points_ ] := Module[ { poly = Polygon @ points },
 
 
 (* ::Text:: *)
-(*polygonWithMidPoints adds middle points to those line segments whose two angles sum up to 180\[Degree].*)
+(*polygonWithMidPoints adds middle points with integer coordinates to those line segments whose two angles sum up to 180\[Degree].*)
 
 
 polygonWithMidPoints[ points_ ] := Module[ {
@@ -92,7 +92,11 @@ polygonWithMidPoints[ points_ ] := Module[ {
 		f
 	},
 	
-	f[ { {a1_, a2_}, {p1_, p2_} }, {i_} ] := If[ a1 == a2 == \[Pi]/2, {i + 0.5, (p1 + p2) / 2}, Nothing ];
+	f[ { {a1_, a2_}, {p1_, p2_} }, {i_} ] := Module[ { mid = (p1 + p2) / 2 },
+		If[ a1 == a2 == \[Pi]/2 && IntegerQ[ mid[[1]] ] && IntegerQ [ mid[[2]] ], 
+			{i + 0.5, mid }, 
+			Nothing ] 
+	];
 	
 	Last /@ SortBy[ Join[
 		MapIndexed[ {First @ #2, #1}&, points ],
