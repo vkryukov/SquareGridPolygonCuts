@@ -360,5 +360,51 @@ findSameDirectionCandidates[ poly_ ] := Module[ { n = Length @ poly },
 ];
 
 
+(* ::Subsubsection:: *)
+(*Alternative approach*)
+
+
+(* ::Text:: *)
+(*orientedSides takes a polygon (as a list of vertices) and returns a list of pairs of unit vectors: the first element of each pair goes from vertex[[i]] to vertex[[i+1]], and the second element is orthogonal to the first and looks "outside".*)
+
+
+orientedSides[ points_ ] := Module[{
+		n = Length @ points,
+		bottomLeft = First @ Sort @ points,
+		bottomLeftId, rotate
+	},
+	
+	bottomLeftId = Position[ points, bottomLeft ][[ 1, 1 ]];
+	
+	(* how rotate the first element to get the second *) 
+	rotate = If [ 
+		points[[ add[ n, bottomLeftId, 1], 1 ]] == bottomLeft[[1]], 
+		
+		(* bottomLeft to next point is vertical *)
+		rotate90left,
+		
+		(* bottomLeft to the next point is horizontal *)
+		rotate90right];
+
+	RotateRight [ 
+		Table[ With[ { 
+			this = points[[ add[ n, bottomLeftId, i ] ]],
+			next = points[[ add[ n, bottomLeftId, (i + 1) ] ]]
+			},
+			{ 
+				Normalize[ next - this ], 
+				rotate @ Normalize[ next - this] 
+			}],
+			
+			{i, 0, n-1}],
+	
+		bottomLeftId - 1 ]
+];
+
+
+(* ::Subsubsection:: *)
+(*Epilogue*)
+
+
 End[];
 EndPackage[];
