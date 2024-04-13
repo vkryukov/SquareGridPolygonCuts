@@ -291,7 +291,7 @@ followAlongSameDirection[ poly_, a_, b_, clockwise_?BooleanQ ] := Module[{
 	
 	Which[
 		res === "candidate",
-		pb,
+		{pa, pb},
 		
 		res === "outside",
 		Missing["pb stepped outside", {pa, pb}],
