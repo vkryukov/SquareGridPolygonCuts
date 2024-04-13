@@ -445,6 +445,118 @@ directionTester[ poly_ ] := Module[ {
 ]
 
 
+(* ::Text:: *)
+(*followAlongSameDirection takes indexes of two points, a and b, a dirTester for poly, and an increasing or decreasing order of vertices, and starting following path Pa along the sides in a given direction from point a, building a parallel congruent path Pb from point b, until one of the following happens:*)
+(**)
+(*1) Pb goes outside of the polygon: discard the attempt*)
+(*2) Pb goes inside the polygon: wait for it to emerge outside, and receive a candidate.*)
+(*3) Pa reached b: discard the attempt. NOTE: we can ignore the case with a rotational symmetry (or mirror symmetry), as we can detect this at the very start before searching for cuts.*)
+
+
+followAlongSameDirectionNew[ poly_, a_, b_, dirTester_, increase_ ] := Module[{
+		n = Length @ poly,
+		sides = orientedSides[ poly ],
+		(* helper functions *) 
+		inc, rotate, stepLength,
+		
+		curA, curB, offset, inside,
+		dir, step, test, toNext, nextB, pointB
+		
+		res, pa, pb
+	},
+	
+	(* get to the next vertex *) 
+	inc[ i_ ] := add[ n, i, increase ];
+
+	(*  rotate transforms a direction of Pa to a congruent direction for Pb  *)
+	rotate = Which [
+		sides[[ a, 1 ]] == sides[[ b, 1 ]],
+		Identity,
+		
+		rotate90left @ sides[[ a, 1 ]] == sides[[ b, 1 ]],
+		rotate90left, 
+		
+		rotate90right @ sides[[ a, 1 ]] == sides[[ b, 1 ]],
+		rotate90right, 
+		
+		True, (* rotate 180\[Degree] *)
+		(- # )& 
+	];
+	
+	(*  length of the side from vertex i  *)
+	stepLength[ i_ ] := Total [ Abs [ poly[[ inc @ i ]] - poly[[ i ]] ] ];
+	
+	curA = a; (* current end of pa *)
+	curB = b; (* closest vertex to the end of pb *)
+	offset = 0; (* offset of the end of pb from curB *)
+	inside = False; (* is pb inside the polygon *)
+	
+	{res, {pa, pb}} = Reap @ Catch [
+		Sow[ poly[[ a ]], "a" ];
+		Sow[ poly[[ b ]], "b" ];
+		
+		While[ curA != b,
+			(* Record the attempt to move. If we discard the attempt, we know at what point  *)
+			Sow [ poly[[ inc @ curA ]], "a" ]; 
+			(* we try to move x steps in given direction *)
+			dir = rotate @ sides[[curA, 1]];
+			step = stepLength @ curA;
+			While [ Not[inside] && step > 0 && curB != a,
+				test = If[ increase == 1,
+					dirTester[ curB, dir, offset == 0],
+					dirTester[ inc @ curB, dir, offset == 0]];
+				Switch[test,
+					-1, (* we're going inside *)
+					Break[], 
+					
+					1, (* abort the attempt *)
+					Throw["outside"], 
+					
+					True, (* move along the side some more *)
+					toNext = stepLength @ curB - offset; 
+					Assert[toNext > 0];
+					If[toNext > step,
+						offset = offset + step; step = 0,
+						curB = inc @ curB; offset = 0; step = step - toNext
+					];
+					pointB = poly[[ curB ]] + dir * offset;
+				]
+			];
+						
+			If[ Not[inside] && curB == a, Throw["pb reached a"] ];
+			
+			If[ step > 0, 
+				(* we're going inside *)
+				inside = True;
+				nextB = findFirstIntersection[ poly, { pointB, pointB + dir * step } ];
+				If[ nextB === Null, 
+					(* no intersection - we are still inside *)
+					pointB = pointB + dir * step;
+					Sow[ pointB, "b" ],
+					
+					(* found intersection - stop and return, we found a candidate *)
+					Sow[ nextB, "b"];
+					Throw["candidate"]
+				]];
+				
+			(* move to the next vertex in pa *)
+			curA = inc @ curA
+		];
+	];
+	
+	Switch[res,
+		"candidate",
+		{pa, pb},
+		
+		Null,
+		Missing["pa reached b", {pa, pb}],
+		
+		_,
+		Missing[res, {pa, pb}]
+	]
+];
+
+
 (* ::Subsubsection:: *)
 (*Epilogue*)
 
