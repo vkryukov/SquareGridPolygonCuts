@@ -244,9 +244,12 @@ followAlongSameDirection[ poly_, a_, b_, clockwise_?BooleanQ ] := Module[{
 						pointB = poly[[ curB ]] + step * dir;
 						Sow[ pointB, "b" ],
 						
-						(* step > lenB; we are steping inside the polygon *)
+						(* step > lenB; we are crossing another vertex *)
 						True,
-						pointB = poly[[ curB ]] + lenB * dir;
+						curB = inc @ curB;
+						If[ angles[[ curB ]] === \[Pi]/2 && (dir == - sides[[curB, 1]] || dir == sides[[curB, 2]]),
+							Throw["outside"] ];
+						pointB = poly[[ curB ]];
 						step = step - lenB;
 						state = "inside";
 						Sow[ pointB, "b" ]
