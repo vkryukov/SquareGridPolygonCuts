@@ -453,16 +453,15 @@ directionTester[ poly_ ] := Module[ {
 (*3) Pa reached b: discard the attempt. NOTE: we can ignore the case with a rotational symmetry (or mirror symmetry), as we can detect this at the very start before searching for cuts.*)
 
 
-followAlongSameDirectionNew[ poly_, a_, b_, dirTester_, increase_ ] := Module[{
+followAlongSameDirectionNew[ poly_, a_, b_, dirTester_, sides_, increase_ ] := Module[{
 		n = Length @ poly,
-		sides = orientedSides[ poly ],
 		(* helper functions *) 
 		inc, rotate, stepLength,
 		
 		curA, curB, offset, inside,
-		dir, step, test, toNext, nextB, pointB
+		dir, step, test, toNext, nextB, pointB,
 		
-		res, pa, pb
+		res, pa, pb, ri
 	},
 	
 	(* get to the next vertex *) 
@@ -489,22 +488,27 @@ followAlongSameDirectionNew[ poly_, a_, b_, dirTester_, increase_ ] := Module[{
 	curA = a; (* current end of pa *)
 	curB = b; (* closest vertex to the end of pb *)
 	offset = 0; (* offset of the end of pb from curB *)
+	pointB = poly[[ b ]];
 	inside = False; (* is pb inside the polygon *)
 	
-	{res, {pa, pb}} = Reap @ Catch [
+	{res, {pa, pb, ri}} = Reap @ Catch [
 		Sow[ poly[[ a ]], "a" ];
 		Sow[ poly[[ b ]], "b" ];
+		Sow[ Null, "i" ];
 		
 		While[ curA != b,
+			Echo[{curA, curB, offset},"(curA, curB, offset)"];
 			(* Record the attempt to move. If we discard the attempt, we know at what point  *)
 			Sow [ poly[[ inc @ curA ]], "a" ]; 
 			(* we try to move x steps in given direction *)
 			dir = rotate @ sides[[curA, 1]];
 			step = stepLength @ curA;
 			While [ Not[inside] && step > 0 && curB != a,
+				Echo[{step, curB}, "(step, curB)"];
 				test = If[ increase == 1,
 					dirTester[ curB, dir, offset == 0],
 					dirTester[ inc @ curB, dir, offset == 0]];
+				Echo[test, "test"];
 				Switch[test,
 					-1, (* we're going inside *)
 					Break[], 
@@ -512,21 +516,29 @@ followAlongSameDirectionNew[ poly_, a_, b_, dirTester_, increase_ ] := Module[{
 					1, (* abort the attempt *)
 					Throw["outside"], 
 					
-					True, (* move along the side some more *)
+					0, (* move along the side some more *)
 					toNext = stepLength @ curB - offset; 
+					Echo[toNext, "toNext"];
 					Assert[toNext > 0];
 					If[toNext > step,
 						offset = offset + step; step = 0,
 						curB = inc @ curB; offset = 0; step = step - toNext
 					];
+					Echo[{curB, offset, step},"(curB,offset,step)"];
 					pointB = poly[[ curB ]] + dir * offset;
+					Sow[ pointB, "b" ],
+					
+					_, (* that should never happen *)
+					Throw[ { "impossible test value", test } ]
 				]
 			];
+			Echo["end of while"];
 						
 			If[ Not[inside] && curB == a, Throw["pb reached a"] ];
 			
 			If[ step > 0, 
 				(* we're going inside *)
+				Echo[{step, dir, pointB},"step,dir,pointB"];
 				inside = True;
 				nextB = findFirstIntersection[ poly, { pointB, pointB + dir * step } ];
 				If[ nextB === Null, 
@@ -535,7 +547,8 @@ followAlongSameDirectionNew[ poly_, a_, b_, dirTester_, increase_ ] := Module[{
 					Sow[ pointB, "b" ],
 					
 					(* found intersection - stop and return, we found a candidate *)
-					Sow[ nextB, "b"];
+					Sow[ nextB[[1]], "b"];
+					Sow[ nextB[[2]], "i"];
 					Throw["candidate"]
 				]];
 				
@@ -546,13 +559,39 @@ followAlongSameDirectionNew[ poly_, a_, b_, dirTester_, increase_ ] := Module[{
 	
 	Switch[res,
 		"candidate",
-		{pa, pb},
+		{pa, pb, If[ri === {Null}, Null, Last @ ri]},
 		
 		Null,
 		Missing["pa reached b", {pa, pb}],
 		
 		_,
 		Missing[res, {pa, pb}]
+	]
+];
+
+
+(* ::Text:: *)
+(*findSameDirectionCandidates find all the cut candidates that go in the same direction.*)
+
+
+findSameDirectionCandidatesNew[ poly_ ] := Module[ {
+		n = Length @ poly,
+		dirTester = directionTester[ poly ],
+		sides = orientedSides[ poly ]
+	},
+	Echo[{n,sides},"n,sides"];
+	QuietEcho @ Select [
+		Flatten[ Table [
+		If[ a == b, 
+			Nothing,
+			Echo[{a,b},"a,b"];
+			{
+				{a, b, 1, followAlongSameDirectionNew[ poly, a, b, dirTester, sides, 1 ]},
+				{a, b, -1, followAlongSameDirectionNew[ poly, a, b, dirTester, sides, -1 ]}
+			}],
+		{a, n}, {b, n}]
+		, 2 ],
+		Not @ MissingQ @ Last[ # ]&
 	]
 ];
 
