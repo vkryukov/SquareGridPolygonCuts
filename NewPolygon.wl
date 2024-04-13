@@ -73,7 +73,7 @@ cyclicalPairs[ lst_ ] := Partition[ Append[ lst, First @ lst ], 2, 1 ];
 (* ::Text:: *)
 (*orderedPolygonAngles is similar to PolygonAngles, but guarantees to list them in the order of vertexes.*)
 (**)
-(*PolygonAngle does NOT give the list of angles in the same order as poly points, by default.*)
+(*PolygonAngle does NOT give the list of angles in the same order as poly points.*)
 (*Example: poly = {{0,0},{5,0},{5,-2},{6,-2},{6,-7},{4,-7},{4,-4},{0,-4}}*)
 
 
@@ -126,7 +126,7 @@ rotate90right[ {x_, y_} ] := Which[
 
 
 (* ::Text:: *)
-(*add  returns a+b modulo n but starts at 1.*)
+(*add returns a+b modulo n but starts at 1.*)
 
 
 add[ n_, a_, b_ ] := ( Mod[ a + b - 1, n ] + 1 );
