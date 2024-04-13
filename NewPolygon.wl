@@ -385,20 +385,14 @@ orientedSides[ points_ ] := Module[{
 		
 		(* bottomLeft to the next point is horizontal *)
 		rotate90right];
-
-	RotateRight [ 
-		Table[ With[ { 
-			this = points[[ add[ n, bottomLeftId, i ] ]],
-			next = points[[ add[ n, bottomLeftId, i + 1 ] ]]
-			},
-			{ 
-				Normalize[ next - this ], 
-				rotate @ Normalize[ next - this] 
-			}],
-			
-			{i, 0, n-1}],
-	
-		bottomLeftId - 1 ]
+		
+	Table[
+		With[ {
+			next = points[[ If[i == n, 1, i+1] ]] 
+			}, 
+		{ Normalize[ next - points[[ i ]] ], 
+		  rotate @ Normalize[ next - points[[ i ]] ] } ],
+		{i, n}]
 ];
 
 
