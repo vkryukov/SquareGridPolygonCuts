@@ -71,11 +71,23 @@ cyclicalPairs[ lst_ ] := Partition[ Append[ lst, First @ lst ], 2, 1 ];
 
 
 (* ::Text:: *)
+(*orderedPolygonAngles is similar to PolygonAngles, but guarantees to list them in the order of vertexes.*)
+(**)
+(*PolygonAngle does NOT give the list of angles in the same order as poly points, by default.*)
+(*Example: poly = {{0,0},{5,0},{5,-2},{6,-2},{6,-7},{4,-7},{4,-4},{0,-4}}*)
+
+
+orderedPolygonAngle[ points_ ] := Module[ { poly = Polygon @ points },
+	PolygonAngle[ poly, # ]& /@ points
+];
+
+
+(* ::Text:: *)
 (*polygonWithMidPoints adds middle points to those line segments whose two angles sum up to 180\[Degree].*)
 
 
 polygonWithMidPoints[ points_ ] := Module[ {
-		angles = cyclicalPairs @ PolygonAngle[ Polygon @ points ],
+		angles = cyclicalPairs @ orderedPolygonAngle[ points ],
 		segments = cyclicalPairs @ points,
 		f
 	},
@@ -170,10 +182,7 @@ orientedSides[ points_, clockwise_?BooleanQ ] := Module[{
 
 followAlongSameDirection[ poly_, a_, b_, clockwise_?BooleanQ ] := Module[{
 		sides = orientedSides[ poly, clockwise ],
-		(*  PolygonAngle does NOT give the list of angles in the same order as poly points, by default.
-			Therefore, we need to make sure that the order is explicit.
-			Example: poly = {{0,0},{5,0},{5,-2},{6,-2},{6,-7},{4,-7},{4,-4},{0,-4}} *)
-		angles = Table[PolygonAngle[ Polygon @ poly, poly[[i]] ], {i, Length @ poly}],
+		angles = orderedPolygonAngle[ poly ],
 		n = Length @ poly,
 		inc, rotate, stepLength,
 		state, curA, curB, dir, pointB, step, lenB, nextB,
