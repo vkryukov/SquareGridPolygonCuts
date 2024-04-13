@@ -389,7 +389,7 @@ orientedSides[ points_ ] := Module[{
 	RotateRight [ 
 		Table[ With[ { 
 			this = points[[ add[ n, bottomLeftId, i ] ]],
-			next = points[[ add[ n, bottomLeftId, (i + 1) ] ]]
+			next = points[[ add[ n, bottomLeftId, i + 1 ] ]]
 			},
 			{ 
 				Normalize[ next - this ], 
@@ -400,6 +400,56 @@ orientedSides[ points_ ] := Module[{
 	
 		bottomLeftId - 1 ]
 ];
+
+
+(* ::Text:: *)
+(*directionTester takes a polygon poly and return a function fn with two signatures:*)
+(**)
+(*fn[i, dir] take an index of a vertex and a direction and returns 1 if it goes outside of polygon, 0 if it goes along the side, and -1 if it goes inside the polygon.*)
+(**)
+(*fn[i, dir, True] is similar, but tests for all internal points between vertices i and i+1.*)
+
+
+directionTester[ poly_ ] := Module[ { 
+	sides = orientedSides [ poly ],
+	n = Length @ poly,
+	fn
+	},
+	
+	fn [ i_, dir_ ] := Module[ { 
+		prev = add[n, i, -1], 
+		next = add[n, i, 1]
+		},
+		Which[
+			(* 90 degree angle at point i *)
+			sides[[prev, 2]] == -sides[[i, 1]],
+			If[dir == sides[[i, 1]] || dir == -sides[[prev, 1]], 
+				0,
+				1],
+			
+			(* 180 degree  angle at point i *)
+			sides[[prev, 1]] == sides[[i, 1]],
+			Which[
+				dir == sides[[i, 2]], 1,	
+				dir == -sides[[i, 2]], -1,
+				True, 0
+			],
+			
+			(* 270 degree angle at point i *)
+			True,
+			If[dir == sides[[i, 1]] || dir == -sides[[prev, 1]],
+				0,
+				-1
+			]
+		]];
+	
+	fn [ i_, dir_, True ] := Switch[dir,
+		sides[[i, 2]], 1,
+		-sides[[i,2]], -1,
+		_, 0];
+	
+	fn
+]
 
 
 (* ::Subsubsection:: *)
