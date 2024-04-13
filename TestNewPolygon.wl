@@ -18,6 +18,12 @@ TestCreate[
 
 
 TestCreate[
+	NewPolygon`Private`orderedPolygonAngle[{{0,0},{5,0},{5,-2},{6,-2},{6,-7},{4,-7},{4,-4},{0,-4}}],
+	{\[Pi]/2,\[Pi]/2,(3 \[Pi])/2,\[Pi]/2,\[Pi]/2,\[Pi]/2,(3 \[Pi])/2,\[Pi]/2}
+]
+
+
+TestCreate[
 	NewPolygon`Private`polygonWithMidPoints[ {{0,0},{1,0},{1,1},{0,1}} ],
 	{{0,0},{1,0},{1,1},{0,1}}
 ];
