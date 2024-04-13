@@ -327,5 +327,25 @@ findFirstIntersection[ poly_, { a_, b_ }] := Module[{
 ];
 
 
+(* ::Text:: *)
+(*findSameDirectionCandidates find all the cut candidates that go in the same direction.*)
+
+
+findSameDirectionCandidates[ poly_ ] := Module[ { n = Length @ poly },
+	Select [
+		Flatten[ Table [
+		If[ a == b, 
+			Nothing,
+			{
+				{a, b, True, followAlongSameDirection[ poly, a, b, True ]},
+				{a, b, False, followAlongSameDirection[ poly, a, b, False ]}
+			}],
+		{a, n}, {b, n}]
+		, 2 ],
+		Not @ MissingQ @ Last[ # ]&
+	]
+];
+
+
 End[];
 EndPackage[];
