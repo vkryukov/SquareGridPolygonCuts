@@ -397,11 +397,11 @@ orientedSides[ points_ ] := Module[{
 
 
 (* ::Text:: *)
-(*directionTester takes a polygon poly and return a function fn with two signatures:*)
+(*directionTester takes a polygon poly and return a function fn:*)
 (**)
-(*fn[i, dir] take an index of a vertex and a direction and returns 1 if it goes outside of polygon, 0 if it goes along the side, and -1 if it goes inside the polygon.*)
+(*fn[i, dir, True] take an index of a vertex and a direction and returns 1 if it goes outside of polygon, 0 if it goes along the side, and -1 if it goes inside the polygon.*)
 (**)
-(*fn[i, dir, True] is similar, but tests for all internal points between vertices i and i+1.*)
+(*fn[i, dir, False] is similar, but tests for all internal points between vertices i and i+1.*)
 
 
 directionTester[ poly_ ] := Module[ { 
@@ -410,7 +410,7 @@ directionTester[ poly_ ] := Module[ {
 	fn
 	},
 	
-	fn [ i_, dir_ ] := Module[ { 
+	fn [ i_, dir_, True ] := Module[ { 
 		prev = add[n, i, -1], 
 		next = add[n, i, 1]
 		},
@@ -437,7 +437,7 @@ directionTester[ poly_ ] := Module[ {
 			]
 		]];
 	
-	fn [ i_, dir_, True ] := Switch[dir,
+	fn [ i_, dir_, False ] := Switch[dir,
 		sides[[i, 2]], 1,
 		-sides[[i,2]], -1,
 		_, 0];
