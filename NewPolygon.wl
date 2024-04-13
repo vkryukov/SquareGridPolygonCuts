@@ -316,7 +316,7 @@ followAlongSameDirection[ poly_, a_, b_, clockwise_?BooleanQ ] := Module[{
 
 
 (* ::Text:: *)
-(*findFirstIntersection gets a polygon and two points a and b, such that either a is inside or a is on the side and a->b is going inside, and returns the coordinate of the first intersection of a->b with sides of polygon, or Null if there is no intersection (= b is still inside).*)
+(*findFirstIntersection gets a polygon and two points a and b, such that either a is inside or a is on the side and a->b is going inside, and returns the pair (coordinate of the first intersection of a->b with sides of polygon, sides of the polygon been intersected) or Null if there is no intersection (= b is still inside).*)
 
 
 findFirstIntersection[ poly_, { a_, b_ }] := Module[{ 
@@ -333,9 +333,9 @@ findFirstIntersection[ poly_, { a_, b_ }] := Module[{
 		);
 		
 	Catch @ Do[
-		If [ pointOnSide[ s, a + i * d ], Throw[ a + i * d] ] 
+		If [ pointOnSide[ sides[[j]], a + i * d ], Throw[ {a + i * d, j} ] ]
 		, {i, l}
-		, {s, sides}
+		, {j, Length @ sides}
 	]
 ];
 
@@ -411,8 +411,7 @@ directionTester[ poly_ ] := Module[ {
 	},
 	
 	fn [ i_, dir_, True ] := Module[ { 
-		prev = add[n, i, -1], 
-		next = add[n, i, 1]
+		prev = add[n, i, -1]
 		},
 		Which[
 			(* 90 degree angle at point i *)
