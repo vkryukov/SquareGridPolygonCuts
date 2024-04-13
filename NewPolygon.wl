@@ -39,7 +39,7 @@ DrawPolygon[ points_, OptionsPattern[] ] := Module[ { p = OptionValue["Pad"] },
 		Graphics[ {
 			EdgeForm[Darker @ Gray], FaceForm[ LightBlue ], Polygon @ points,
 			If[ OptionValue["Numbered"], 
-				MapIndexed[Text[Style[#2[[1]], 12, Bold], #1 + {-0.1, 0.15}] &, points],
+				MapIndexed[Text[Style[#2[[1]], 12, Bold], #1, {1,-1} ] &, points],
 				{}
 			]
 		} ],
