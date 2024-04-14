@@ -579,12 +579,10 @@ findSameDirectionCandidatesNew[ poly_ ] := Module[ {
 		dirTester = directionTester[ poly ],
 		sides = orientedSides[ poly ]
 	},
-	Echo[{n,sides},"n,sides"];
 	QuietEcho @ Select [
 		Flatten[ Table [
 		If[ a == b, 
 			Nothing,
-			Echo[{a,b},"a,b"];
 			{
 				{a, b, 1, followAlongSameDirectionNew[ poly, a, b, dirTester, sides, 1 ]},
 				{a, b, -1, followAlongSameDirectionNew[ poly, a, b, dirTester, sides, -1 ]}
