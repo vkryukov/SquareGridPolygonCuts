@@ -456,7 +456,7 @@ directionTester[ poly_ ] := Module[ {
 followAlongSameDirectionNew[ poly_, a_, b_, dirTester_, sides_, increase_ ] := Module[{
 		n = Length @ poly,
 		(* helper functions *) 
-		inc, rotate, stepLength,
+		inc, direction, dirA, dirB, rotate, stepLength,
 		
 		curA, curB, offset, inside,
 		dir, step, test, toNext, nextB, pointB,
@@ -466,16 +466,22 @@ followAlongSameDirectionNew[ poly_, a_, b_, dirTester_, sides_, increase_ ] := M
 	
 	(* get to the next vertex *) 
 	inc[ i_ ] := add[ n, i, increase ];
+	
+	(* direction of the side from vertex *)
+	direction[ i_ ] := If[ increase == 1, sides[[ i, 1 ]], -sides[[ inc @ i, 1 ]] ];
 
 	(*  rotate transforms a direction of Pa to a congruent direction for Pb  *)
+	dirA = direction[ a ];
+	dirB = direction[ b ];
+	Echo[{dirA,dirB},"dirA,dirB"];
 	rotate = Which [
-		sides[[ a, 1 ]] == sides[[ b, 1 ]],
+		dirA == dirB,
 		Identity,
 		
-		rotate90left @ sides[[ a, 1 ]] == sides[[ b, 1 ]],
+		rotate90left @ dirA == dirB,
 		rotate90left, 
 		
-		rotate90right @ sides[[ a, 1 ]] == sides[[ b, 1 ]],
+		rotate90right @ dirA == dirB,
 		rotate90right, 
 		
 		True, (* rotate 180\[Degree] *)
@@ -501,13 +507,16 @@ followAlongSameDirectionNew[ poly_, a_, b_, dirTester_, sides_, increase_ ] := M
 			(* Record the attempt to move. If we discard the attempt, we know at what point  *)
 			Sow [ poly[[ inc @ curA ]], "a" ]; 
 			(* we try to move x steps in given direction *)
-			dir = rotate @ sides[[curA, 1]];
+			dir = rotate @ direction [ curA ];
 			step = stepLength @ curA;
+			Echo[{dir,step},"dir,step"];
 			While [ Not[inside] && step > 0 && curB != a,
-				Echo[{step, curB}, "(step, curB)"];
-				test = If[ increase == 1,
-					dirTester[ curB, dir, offset == 0],
-					dirTester[ inc @ curB, dir, offset == 0]];
+				Echo[{step,curB,offset}, "step,curB,offset"];
+				test = dirTester [ 
+					If[ offset == 0 || increase == 1, curB, inc @ curB], 
+					dir, 
+					offset == 0
+				];
 				Echo[test, "test"];
 				Switch[test,
 					-1, (* we're going inside *)
@@ -538,9 +547,9 @@ followAlongSameDirectionNew[ poly_, a_, b_, dirTester_, sides_, increase_ ] := M
 			
 			If[ step > 0, 
 				(* we're going inside *)
-				Echo[{step, dir, pointB},"step,dir,pointB"];
 				inside = True;
 				nextB = findFirstIntersection[ poly, { pointB, pointB + dir * step } ];
+				Echo[{step, dir, pointB,nextB},"step,dir,pointB,nextB"];
 				If[ nextB === Null, 
 					(* no intersection - we are still inside *)
 					pointB = pointB + dir * step;
