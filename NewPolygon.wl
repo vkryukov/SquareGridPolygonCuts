@@ -583,11 +583,13 @@ followAlongSameDirectionNew[ poly_, a_, b_, dirTester_, sides_, increase_ ] := M
 (*findSameDirectionCandidates find all the cut candidates that go in the same direction.*)
 
 
-findSameDirectionCandidatesNew[ poly_ ] := Module[ {
-		n = Length @ poly,
-		dirTester = directionTester[ poly ],
-		sides = orientedSides[ poly ]
+findSameDirectionCandidatesNew[ originalPoly_ ] := Module[ {
+		n, dirTester, sides, poly
 	},
+	poly = polygonWithMidPoints[ originalPoly ];
+	n = Length @ poly;
+	dirTester = directionTester[ poly ];
+	sides = orientedSides[ poly ];
 	QuietEcho @ Select [
 		Flatten[ Table [
 		If[ a == b, 
