@@ -132,7 +132,7 @@ rotate90right[ {x_, y_} ] := Which[
 add[ n_, a_, b_ ] := ( Mod[ a + b - 1, n ] + 1 );
 
 
-(* ::Subsubsection:: *)
+(* ::Subsubsection::Closed:: *)
 (*Follow along the side*)
 
 
@@ -360,40 +360,12 @@ findSameDirectionCandidates[ poly_ ] := Module[ { n = Length @ poly },
 ];
 
 
-(* ::Subsubsection:: *)
+(* ::Subsection:: *)
 (*Alternative approach*)
 
 
-(* ::Text:: *)
-(*orientedSides takes a polygon (as a list of vertices) and returns a list of pairs of unit vectors: the first element of each pair goes from vertex[[i]] to vertex[[i+1]], and the second element is orthogonal to the first and looks "outside".*)
-
-
-orientedSides[ points_ ] := Module[{
-		n = Length @ points,
-		bottomLeft = First @ Sort @ points,
-		bottomLeftId, rotate
-	},
-	
-	bottomLeftId = Position[ points, bottomLeft ][[ 1, 1 ]];
-	
-	(* how rotate the first element to get the second *) 
-	rotate = If [ 
-		points[[ add[ n, bottomLeftId, 1], 1 ]] == bottomLeft[[1]], 
-		
-		(* bottomLeft to next point is vertical *)
-		rotate90left,
-		
-		(* bottomLeft to the next point is horizontal *)
-		rotate90right];
-		
-	Table[
-		With[ {
-			next = points[[ If[i == n, 1, i+1] ]] 
-			}, 
-		{ Normalize[ next - points[[ i ]] ], 
-		  rotate @ Normalize[ next - points[[ i ]] ] } ],
-		{i, n}]
-];
+(* ::Subsubsection:: *)
+(*Utilities*)
 
 
 (* ::Text:: *)
@@ -445,11 +417,71 @@ directionTester[ poly_ ] := Module[ {
 ]
 
 
+(* ::Subsubsection:: *)
+(*SGPolygon*)
+
+
+(* ::Text:: *)
+(*orientedSides takes a polygon (as a list of vertices) and returns a list of pairs of unit vectors: the first element of each pair goes from vertex[[i]] to vertex[[i+1]], and the second element is orthogonal to the first and looks "outside".*)
+
+
+orientedSides[ points_ ] := Module[{
+		n = Length @ points,
+		bottomLeft = First @ Sort @ points,
+		bottomLeftId, rotate
+	},
+	
+	bottomLeftId = Position[ points, bottomLeft ][[ 1, 1 ]];
+	
+	(* how rotate the first element to get the second *) 
+	rotate = If [ 
+		points[[ add[ n, bottomLeftId, 1], 1 ]] == bottomLeft[[1]], 
+		
+		(* bottomLeft to next point is vertical *)
+		rotate90left,
+		
+		(* bottomLeft to the next point is horizontal *)
+		rotate90right];
+		
+	Table[
+		With[ {
+			next = points[[ If[i == n, 1, i+1] ]] 
+			}, 
+		{ Normalize[ next - points[[ i ]] ], 
+		  rotate @ Normalize[ next - points[[ i ]] ] } ],
+		{i, n}]
+];
+
+
+(* ::Text:: *)
+(*makeSGPolygon gets a list of points and return a SGPolygon (Square Grid Polygon) data structure.*)
+
+
+makeSGPolygon[ points_ ] := Module[ { sides = orientedSides[ points ] },
+	SGPolygon[<|
+		"points" -> points, (* set of points representing the polygon *)
+		"n" -> Length @ points, (* number of vertexes *)
+		"sides" -> sides[[All, 1]], (* normalized vectors going from vertex i to i+1 *)
+		"outside" -> sides[[All, 2]] (* orthogonal vectors to side at vertex i that goes 'outside' *)
+	|>]
+];
+
+
+SGPolygon[p_][s_String] := p[s]
+
+
+Format[SGPolygon[p_], StandardForm] := Show[ DrawPolygon[ p["points"], "Numbered" -> True ], ImageSize -> 150 ];
+
+
+(* ::Subsubsection:: *)
+(*followAlongSameDirection*)
+
+
 (* ::Text:: *)
 (*followAlongSameDirection takes indexes of two points, a and b, a dirTester for poly, and an increasing or decreasing order of vertices, and starting following path Pa along the sides in a given direction from point a, building a parallel congruent path Pb from point b, until one of the following happens:*)
 (**)
 (*1) Pb goes outside of the polygon: discard the attempt*)
-(*2) Pb goes inside the polygon: wait for it to emerge outside, and receive a candidate.*)
+(*2) Pb goes inside the polygon: wait for it to emerge on the side, thus getting a candidate.*)
 (*3) Pa reached b: discard the attempt. NOTE: we can ignore the case with a rotational symmetry (or mirror symmetry), as we can detect this at the very start before searching for cuts.*)
 
 
