@@ -603,6 +603,26 @@ findSameDirectionCandidatesNew[ originalPoly_ ] := Module[ {
 ];
 
 
+(* ::Text:: *)
+(*compressPath remove all internal points on the sides*)
+
+
+compressPath[ s_ ] := ( s //. {
+	{a___,{b_,c_},{b_,d_},{b_,e_},f___} :> {a, {b,c}, {b,e}, f},
+	{a___,{c_,b_},{d_,b_},{e_,b_},f___} :> {a, {c,b}, {e,b}, f}
+});
+
+
+(* ::Text:: *)
+(*verifyCandidate takes a polygon and a potential cut candidate and returns a standardize cut if it indeed cuts the polygon into two congruent paths, and Nothing otherwise.*)
+(**)
+(*A standardize cut is a compressed path (see above) that doesn't have any segments overlapping with the sides of the polygon.*)
+
+
+(* ::Text:: *)
+(**)
+
+
 (* ::Subsubsection:: *)
 (*Epilogue*)
 
