@@ -510,7 +510,7 @@ followAlongSameDirectionNew[ poly_, a_, b_, dirTester_, sides_, increase_ ] := M
 			dir = rotate @ direction [ curA ];
 			step = stepLength @ curA;
 			Echo[{dir,step},"dir,step"];
-			While [ Not[inside] && step > 0 && curB != a,
+			While [ Not[inside] && step > 0,
 				Echo[{step,curB,offset}, "step,curB,offset"];
 				test = dirTester [ 
 					If[ offset == 0 || increase == 1, curB, inc @ curB], 
@@ -543,8 +543,6 @@ followAlongSameDirectionNew[ poly_, a_, b_, dirTester_, sides_, increase_ ] := M
 			];
 			Echo["end of while"];
 						
-			If[ Not[inside] && curB == a, Throw["pb reached a"] ];
-			
 			If[ step > 0, 
 				(* we're going inside *)
 				inside = True;
