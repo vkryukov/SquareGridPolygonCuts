@@ -470,7 +470,28 @@ makeSGPolygon[ points_ ] := Module[ { sides = orientedSides[ points ] },
 SGPolygon[p_][s_String] := p[s]
 
 
-Format[SGPolygon[p_], StandardForm] := Show[ DrawPolygon[ p["points"], "Numbered" -> True ], ImageSize -> 150 ];
+Format[SGPolygon[p_], StandardForm] := 
+	Show[ 
+		DrawPolygon[ p["points"], "Numbered" -> True ], 
+		ImageSize -> 150 
+	];
+
+
+(* ::Text:: *)
+(*SGPolygonPoint is a data structure that represents a point within a polygon: either a vertex i, a point between vertices i and i+1, or an internal point.*)
+
+
+SGPolygon[p_][i_Integer] := 
+	SGPolygonPoint[<| "polygon" -> p, "vertex" -> Mod[ i - 1, p["n"] ] + 1 |>];
+
+
+Format[SGPolygonPoint[p_], StandardForm] := Module[ { points = p["polygon"]["points"] },
+	Show[
+		DrawPolygon[ points, "Numbered" -> True ],
+		Graphics[{ Red, PointSize[Large], Point[ points[[ p["vertex"] ]] ] }],
+		ImageSize -> 150
+	]
+];
 
 
 (* ::Subsubsection:: *)
