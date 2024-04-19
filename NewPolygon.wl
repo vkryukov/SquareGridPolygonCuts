@@ -18,7 +18,7 @@ SetUsage[DrawPolygonWithLines,
 Begin["`Private`"];
 
 
-(* ::Subsubsection:: *)
+(* ::Subsubsection::Closed:: *)
 (*Drawing primitives*)
 
 
@@ -63,7 +63,7 @@ DrawPolygonWithLines[ points_, lines_, opts: OptionsPattern[]] :=
 	];
 
 
-(* ::Subsubsection:: *)
+(* ::Subsubsection::Closed:: *)
 (*Utilities*)
 
 
@@ -364,7 +364,7 @@ findSameDirectionCandidates[ poly_ ] := Module[ { n = Length @ poly },
 (*Alternative approach*)
 
 
-(* ::Subsubsection:: *)
+(* ::Subsubsection::Closed:: *)
 (*Utilities*)
 
 
@@ -461,8 +461,8 @@ makeSGPolygon[ points_ ] := Module[ { sides = orientedSides[ points ] },
 	SGPolygon[<|
 		"points" -> points, (* set of points representing the polygon *)
 		"n" -> Length @ points, (* number of vertexes *)
-		"sides" -> sides[[All, 1]], (* normalized vectors going from vertex i to i+1 *)
-		"outside" -> sides[[All, 2]] (* orthogonal vectors to side at vertex i that goes 'outside' *)
+		"side" -> sides[[All, 1]], (* normalized vectors going from vertex i to i+1 *)
+		"out" -> sides[[All, 2]] (* orthogonal vectors to side at vertex i that goes 'outside' *)
 	|>]
 ];
 
@@ -481,16 +481,164 @@ Format[SGPolygon[p_], StandardForm] :=
 (*SGPolygonPoint is a data structure that represents a point within a polygon: either a vertex i, a point between vertices i and i+1, or an internal point.*)
 
 
-SGPolygon[p_][i_Integer] := 
-	SGPolygonPoint[<| "polygon" -> p, "vertex" -> Mod[ i - 1, p["n"] ] + 1 |>];
+(* ::Text:: *)
+(*mod is like Mod, but maps into 1..n instead of 0..n-1.*)
 
 
-Format[SGPolygonPoint[p_], StandardForm] := Module[ { points = p["polygon"]["points"] },
+mod[ v_, n_ ] := (Mod[ v - 1, n ] + 1);
+
+
+SGPolygon[p_][v_Integer] := 
+	SGPolygonPoint[<| 
+		"polygon" -> SGPolygon[p], 
+		"vertex" -> mod[ v, p["n"] ],
+		"offset" -> 0 
+	|>];
+
+
+vertexQ[ SGPolygonPoint[ p_ ] ] := ( KeyExistsQ[ p, "offset" ] && p["offset"] == 0 );
+
+
+sideQ[ SGPolygonPoint[ p_ ] ] := ( KeyExistsQ[ p, "offset" ] && p["offset"] != 0 );
+
+
+insideQ[ SGPolygonPoint[ p_ ] ] := KeyExistsQ[ p, "inside" ];
+
+
+SGPolygonPoint[ a_ ][ "coord" ] := 
+	If[ insideQ[ SGPolygonPoint[ a ] ],
+		a["inside"]
+		,
+		a["polygon"]["points"][[ a["vertex"] ]] + a["polygon"]["side"][[ a["vertex"] ]] * a["offset"]
+	];
+
+
+Format[ p: SGPolygonPoint[a_], StandardForm ] := Module[ { points = a["polygon"]["points"] },
 	Show[
 		DrawPolygon[ points, "Numbered" -> True ],
-		Graphics[{ Red, PointSize[Large], Point[ points[[ p["vertex"] ]] ] }],
-		ImageSize -> 150
+		Graphics[{ Red, PointSize[Large], Point[ p["coord"] ] }],
+		ImageSize -> 150 ]
+];
+
+
+SGPolygonPoint::badoffset = "offset from vertex `` should be between `` and ``"
+
+
+distance[ a_, b_ ] := Total @ Abs[ b - a ];
+
+
+(* ::Text:: *)
+(*testDirection takes a point on the side of a polygon and a direction, and returns 1 if moving in that direction will take us outside of the polygon, 0 if we'll move along the side, and -1 if we'll move inside.*)
+
+
+testDirection[ p: SGPolygonPoint[ a_ ], dir_ ] := Module[ {
+		side = a["polygon"]["side"],
+		out = a["polygon"]["out"],
+		v = a["vertex"],
+		prev = mod[ a["vertex"] - 1, a["polygon"]["n"] ]
+	},
+	Assert[ Not[ insideQ[ p ] ] ];
+	If[ vertexQ[p],
+		Which[
+			dir == side[[ v ]] || dir == -side[[ prev ]], 0,
+			(* it's a 90\[Degree] angle *) out[[ prev ]] == - side[[ v ]] && 
+				(dir == out[[ v ]] || dir == out[[ prev ]]) , 1, 
+			True, -1 ],
+		
+		(* sideQ[p] *)
+		Switch[ out[[v]],
+			dir, 1,
+			-dir, -1,
+			_, 0 ]
 	]
+];
+
+
+(* ::Text:: *)
+(*pointOnSide returns True if the point lies on a side.*)
+
+
+pointOnSide[ { {x1_,y1_}, {x2_,y2_} }, {x_,y_} ] := (
+	( x1 == x2 == x && (y1 <= y <= y2 || y2 <= y <= y1) ) ||
+	( y1 == y2 == y && (x1 <= x <= x2 || x2 <= x <= x1) )
+);
+
+
+(* ::Text:: *)
+(*move starts at point p and attempts to move to p + dir * step. For points on the side, it aborts and returns Null if at any point it will have to move outside before going inside. Otherwise, it will stop at either p + dir * step, or at the first intersection with a side when it moves from the inside. It returns a pair (point, boolean: does the move ever moved inside).*)
+
+
+move[ p: SGPolygonPoint[a_], dir_, step_ ] := Module[ { 
+		test = -1,
+		side = a["polygon"]["side"],
+		points = a["polygon"]["points"],
+		a1 = a,
+		v = a["vertex"],
+		o = a["offset"],
+		n = a["polygon"]["n"],
+		dist, i, j, p0, p1
+	},
+	If[ step == 0, Return @ {p, False } ];
+	If[ Not[ insideQ[ p ] ], test = testDirection[ p, dir ]];
+	If[ test == 1, Return @ Null ]; (* would move outside *)
+	If[ test == 0,
+		Echo["test = 0"];
+		Echo[{dir, side[[ v ]], dir == side[[v]]}, "dir, side[v], dir==side[v]"];
+		(* move along a side - calculate the distance to the next vertex *)
+		Which[ 
+			(* moving towards the next vertex *)
+			dir == side[[ v ]],
+			Echo["move towards next vertex"];
+			dist = distance [ points[[ v ]], points[[ mod[ v + 1, n ] ]] ];
+			If[ step < dist - o,
+				a1["offset"] = o + step; Return @ { SGPolygonPoint[a1], False }
+				,
+				a1["offset"] = 0; a1["vertex"] = mod[ v + 1, n ];
+				Return @ move[ SGPolygonPoint[a1], dir, step - ( dist - o ) ]
+			]
+			,
+			(* moving back towards the current vertex - reducing offset *)
+			o > 0,
+			Echo["move towards current vertex"];
+			If[ step <= o,
+				a1["offset"] = o - step; Return @ { SGPolygonPoint[a1], False }
+				,
+				a1["offset"] = 0; Return @ move[ SGPolygonPoint[a1], dir, step - o ]
+			]
+			,
+			(* moving towards the previous vertex *)
+			True,
+			Echo["move towards prev vertex"];
+			dist = distance [ points[[ v ]], points[[ mod[ v - 1, n ] ]] ];
+			a1["vertex"] = mod[ v - 1, n ];
+			If[ step <= dist,
+				a1["offset"] = dist - step;
+				Return @ { SGPolygonPoint[a1], False }
+				,
+				a1["offset"] = 0;
+				Echo[{a1, dir, step-dist}, "calling move again"];
+				Return @ move[ SGPolygonPoint[a1], dir, step - dist ]
+			]
+		]
+	];
+	
+	(* move inside *)
+	p0 = p["coord"]; 
+	For[ i = 1, i <= step, i++, 
+		p1 = p0 + i * dir;
+		For[ j = 1, j <= n, j++, 
+			If[ pointOnSide[ { points[[ j ]], points[[ If[ j == n, 1, j + 1] ]] }, p1 ],
+				a1 = KeyDrop[a, "inside"];
+				a1["vertex"] = j;
+				a1["offset"] = distance[ points[[j]], p1 ];
+				Return @ { SGPolygonPoint[a1], True }
+			]
+		]
+	];
+	(* we're still inside *)
+	a1 = KeyDrop[a, {"vertex", "offset"} ];
+	a1["inside"] = p1;
+	{ SGPolygonPoint[a1], True }
 ];
 
 
