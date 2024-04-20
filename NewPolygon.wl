@@ -513,6 +513,34 @@ SGPolygonPoint[ a_ ][ "coord" ] :=
 	];
 
 
+(* ::Text:: *)
+(*Returns a point that is *)
+
+
+SGPolygonPoint[ a_ ][ i_Integer ] := Module[ {a1 = a},
+	Assert[ vertexQ[ SGPolygonPoint[a] ] ];
+	a1["vertex"] = mod[ a["vertex"] + i, a["polygon"]["n"] ];
+	SGPolygonPoint[a1]
+];
+
+
+SGPolygonPoint[ a_ ]["sideLength", increase_: 1 ] := 
+	distance[
+		SGPolygonPoint[a]["coord"],
+		SGPolygonPoint[a][increase]["coord"]
+	];
+
+
+SGPolygonPoint[ a_ ]["side", increase_: 1 ] := 
+	If[ increase == 1, 
+		a["polygon"]["side"][[ a["vertex"] ]],
+		a["polygon"]["side"][[ mod[ a["vertex"] + increase, a["polygon"]["n"] ]]]
+	];
+
+
+SGPolygonPoint[ a_ ][ key_String ] := a[key];
+
+
 Format[ p: SGPolygonPoint[a_], StandardForm ] := Module[ { points = a["polygon"]["points"] },
 	Show[
 		DrawPolygon[ points, "Numbered" -> True ],
@@ -639,6 +667,63 @@ move[ p: SGPolygonPoint[a_], dir_, step_ ] := Module[ {
 	a1 = KeyDrop[a, {"vertex", "offset"} ];
 	a1["inside"] = p1;
 	{ SGPolygonPoint[a1], True }
+];
+
+
+(* ::Text:: *)
+(*followAlong rewritten with move*)
+
+
+followAlong[ p: SGPolygon[_], a_, b_, increase_ ] := Module[{
+		dirA = p["side"][[ a ]], dirB = p["side"][[ b ]], rotate,
+		curA = p[a], curB = p[b],
+		pa, pb, res, next
+	}
+	,
+	rotate = Which [
+		dirA == dirB,
+		Identity,
+		
+		rotate90left @ dirA == dirB,
+		rotate90left, 
+		
+		rotate90right @ dirA == dirB,
+		rotate90right, 
+		
+		True, (* rotate 180\[Degree] *)
+		(- # )& 
+	];
+	
+	{res, {pa, pb}} = Reap @ Catch [
+		Sow[ curA, "a" ];
+		Sow[ curB, "b" ];
+		Echo[ { curA, curA["vertex"] }, "curA (vertex)"];
+		While[ curA["vertex"] != b,
+			next = move[ curB, rotate @ curA["side", increase], curA["sideLength", increase] ];
+			curA = curA[ increase ];
+			Sow[ curA, "a" ];
+			If[ next == Null, Throw[ "outside" ] ];
+			curB = next[[1]];
+			Sow[ curB, "b" ];
+			If[ next[[2]] && Not[ insideQ @ curB ],
+				Throw[ "candidate" ]
+			]
+		]
+	];
+	
+	Switch[res,
+		Null,
+		Missing["pa reached b", {pa, pb}],
+		
+		"outside",
+		Missing["pb went outside", {pa, pb}],
+		
+		"candidate",
+		{pa, pb},
+		
+		_,
+		Missing["unknown res", {pa, pb, res}]
+	]
 ];
 
 
