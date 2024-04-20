@@ -132,7 +132,7 @@ rotate90right[ {x_, y_} ] := Which[
 add[ n_, a_, b_ ] := ( Mod[ a + b - 1, n ] + 1 );
 
 
-(* ::Subsubsection::Closed:: *)
+(* ::Subsubsection:: *)
 (*Follow along the side*)
 
 
@@ -549,9 +549,6 @@ Format[ p: SGPolygonPoint[a_], StandardForm ] := Module[ { points = a["polygon"]
 ];
 
 
-SGPolygonPoint::badoffset = "offset from vertex `` should be between `` and ``"
-
-
 distance[ a_, b_ ] := Total @ Abs[ b - a ];
 
 
@@ -713,13 +710,17 @@ followAlong[ p: SGPolygon[_], a_, b_, increase_ ] := Module[{
 	
 	Switch[res,
 		Null, Missing["pa reached b", {pa, pb}],
-		
 		"outside", Missing["pb went outside", {pa, pb}],
-		
 		"candidate", {pa, pb},
-		
 		_, Missing["unknown res", {pa, pb, res}]
 	]
+];
+
+
+followAlongCandidates[ poly: SGPolygon[_] ] := Module[ { params, results },
+	params = Select[ Tuples[{ Range[poly["n"]], Range[poly["n"]], {-1, 1} } ], #[[1]] != #[[2]] & ];
+	results = {#[[1]], #[[2]], #[[3]], QuietEcho @ followAlong[poly, #[[1]], #[[2]], #[[3]]]}& /@ params;
+	Select[ results, Not [ MissingQ [ #[[4]] ] ] &]
 ];
 
 
