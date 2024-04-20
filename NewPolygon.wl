@@ -63,7 +63,7 @@ DrawPolygonWithLines[ points_, lines_, opts: OptionsPattern[]] :=
 	];
 
 
-(* ::Subsubsection::Closed:: *)
+(* ::Subsubsection:: *)
 (*Utilities*)
 
 
@@ -534,7 +534,7 @@ SGPolygonPoint[ a_ ]["sideLength", increase_: 1 ] :=
 SGPolygonPoint[ a_ ]["side", increase_: 1 ] := 
 	If[ increase == 1, 
 		a["polygon"]["side"][[ a["vertex"] ]],
-		a["polygon"]["side"][[ mod[ a["vertex"] + increase, a["polygon"]["n"] ]]]
+		- a["polygon"]["side"][[ mod[ a["vertex"] - 1, a["polygon"]["n"] ]]]
 	];
 
 
@@ -672,11 +672,14 @@ move[ p: SGPolygonPoint[a_], dir_, step_ ] := Module[ {
 
 
 followAlong[ p: SGPolygon[_], a_, b_, increase_ ] := Module[{
-		dirA = p["side"][[ a ]], dirB = p["side"][[ b ]], rotate,
+		dirA, dirB, rotate,
 		curA = p[a], curB = p[b],
 		pa, pb, res, next
 	}
 	,
+	dirA = curA["side", increase];
+	dirB = curB["side", increase];
+	Echo[{dirA,dirB},"dirA,dirB"];
 	rotate = Which [
 		dirA == dirB, Identity,
 		rotate90left @ dirA == dirB, rotate90left, 
@@ -687,10 +690,11 @@ followAlong[ p: SGPolygon[_], a_, b_, increase_ ] := Module[{
 	{res, {pa, pb}} = Reap @ Catch [
 		Sow[ curA, "a" ];
 		Sow[ curB, "b" ];
-		Echo[ { curA, curA["vertex"] }, "curA (vertex)"];
+		Echo[ { curA, curA["vertex"], curB, curB["vertex"] }, "curA (vertex), curB (vertex)"];
 		While[ curA["vertex"] != b,
 			next = move[ curB, rotate @ curA["side", increase], curA["sideLength", increase] ];
 			curA = curA[ increase ];
+			Echo[{curA,curB,next},"curA,curB,next"];
 			Sow[ curA, "a" ];
 			If[ next == Null, Throw[ "outside" ] ];
 			curB = next[[1]];
@@ -717,7 +721,10 @@ followAlongCandidates[ poly: SGPolygon[_] ] := Module[ { params, results },
 ];
 
 
-(* ::Subsubsection:: *)
+followAlongCandidates[ points_ ] := followAlongCandidates[ makeSGPolygon[ polygonWithMidPoints[points] ] ];
+
+
+(* ::Subsubsection::Closed:: *)
 (*followAlongSameDirection*)
 
 
