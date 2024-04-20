@@ -567,7 +567,8 @@ testDirection[ p: SGPolygonPoint[ a_ ], dir_ ] := Module[ {
 		Which[
 			dir == side[[ v ]] || dir == -side[[ prev ]], 0,
 			(* it's a 90\[Degree] angle *) out[[ prev ]] == - side[[ v ]] && 
-				(dir == out[[ v ]] || dir == out[[ prev ]]) , 1, 
+				(dir == out[[ v ]] || dir == out[[ prev ]]) , 1,
+			(* it's a 180\[Degree] angle *) out[[ prev ]] == out [[ v ]] && dir == out[[ v ]], 1,
 			True, -1 ],
 		
 		(* sideQ[p] *)

@@ -241,4 +241,13 @@ TestCreate[
 ]
 
 
+poly1mid = NewPolygon`Private`makeSGPolygon[{{0,0},{5,0},{5,-2},{6,-2},{6,-7},{5,-7},{4,-7},{4,-4},{0,-4},{0,-2}}];
+
+
+TestCreate[
+	moveTest[ poly1mid, 10, {-1, 0}, 1 ],
+	Null
+]
+
+
 End[]
