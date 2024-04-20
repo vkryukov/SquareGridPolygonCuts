@@ -678,17 +678,10 @@ followAlong[ p: SGPolygon[_], a_, b_, increase_ ] := Module[{
 	}
 	,
 	rotate = Which [
-		dirA == dirB,
-		Identity,
-		
-		rotate90left @ dirA == dirB,
-		rotate90left, 
-		
-		rotate90right @ dirA == dirB,
-		rotate90right, 
-		
-		True, (* rotate 180\[Degree] *)
-		(- # )& 
+		dirA == dirB, Identity,
+		rotate90left @ dirA == dirB, rotate90left, 
+		rotate90right @ dirA == dirB, rotate90right, 
+		True, (* rotate 180\[Degree] *) (- # )& 
 	];
 	
 	{res, {pa, pb}} = Reap @ Catch [
