@@ -712,17 +712,13 @@ followAlong[ p: SGPolygon[_], a_, b_, increase_ ] := Module[{
 	];
 	
 	Switch[res,
-		Null,
-		Missing["pa reached b", {pa, pb}],
+		Null, Missing["pa reached b", {pa, pb}],
 		
-		"outside",
-		Missing["pb went outside", {pa, pb}],
+		"outside", Missing["pb went outside", {pa, pb}],
 		
-		"candidate",
-		{pa, pb},
+		"candidate", {pa, pb},
 		
-		_,
-		Missing["unknown res", {pa, pb, res}]
+		_, Missing["unknown res", {pa, pb, res}]
 	]
 ];
 
@@ -903,10 +899,6 @@ compressPath[ s_ ] := ( s //. {
 (*verifyCandidate takes a polygon and a potential cut candidate and returns a standardize cut if it indeed cuts the polygon into two congruent paths, and Nothing otherwise.*)
 (**)
 (*A standardize cut is a compressed path (see above) that doesn't have any segments overlapping with the sides of the polygon.*)
-
-
-(* ::Text:: *)
-(**)
 
 
 (* ::Subsubsection:: *)
