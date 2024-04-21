@@ -180,6 +180,32 @@ TestCreate[
 
 
 (* ::Subsubsection:: *)
+(*getRotation*)
+
+
+allDirections = {{0, 1}, {0, -1}, {-1, 0}, {1, 0}};
+allDirectionPairs = Tuples[ allDirections, {2} ];
+testRotation[ {dir1_, dir2_ } ] := Module[ {
+		r1 = NewPolygon`Private`getRotation[ dir1, dir2 ],
+		r2 = NewPolygon`Private`getRotation[ dir2, dir1 ]
+	}
+	,
+	And @@ {
+		r1 @ dir1 == dir2,
+		r2 @ dir2 == dir1,
+		r1 @ r2 @ dir1 == dir1,
+		r2 @ r1 @ dir1 == dir1,
+		r1 @ r2 @ dir2 == dir2,
+		r2 @ r1 @ dir2 == dir2
+	}
+];
+TestCreate[
+	AllTrue[ allDirectionPairs, testRotation ],
+	True
+];
+
+
+(* ::Subsubsection:: *)
 (*move and SGPolygonPoint*)
 
 

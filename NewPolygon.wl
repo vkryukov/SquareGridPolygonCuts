@@ -63,7 +63,7 @@ DrawPolygonWithLines[ points_, lines_, opts: OptionsPattern[]] :=
 	];
 
 
-(* ::Subsubsection:: *)
+(* ::Subsubsection::Closed:: *)
 (*Utilities*)
 
 
@@ -132,7 +132,7 @@ rotate90right[ {x_, y_} ] := Which[
 add[ n_, a_, b_ ] := ( Mod[ a + b - 1, n ] + 1 );
 
 
-(* ::Subsubsection:: *)
+(* ::Subsubsection::Closed:: *)
 (*Follow along the side*)
 
 
@@ -669,6 +669,19 @@ move[ p: SGPolygonPoint[a_], dir_, step_ ] := Module[ {
 
 
 (* ::Text:: *)
+(*getRotation returns a rotation that translates dir1 into dir2. Both are expected to be the vectors of the same length (e.g., unit vectors).*)
+
+
+getRotation[ dir1_, dir2_ ] :=
+	Which [
+		dir1 == dir2, Identity,
+		rotate90left @ dir1 == dir2, rotate90left, 
+		rotate90right @ dir1 == dir2, rotate90right, 
+		True, (* rotate 180\[Degree] *) (- # )& 
+	];
+
+
+(* ::Text:: *)
 (*followAlong rewritten with move*)
 
 
@@ -707,10 +720,10 @@ followAlong[ p: SGPolygon[_], a_, b_, increase_ ] := Module[{
 	];
 	
 	Switch[res,
-		Null, Missing["pa reached b", {pa, pb}],
-		"outside", Missing["pb went outside", {pa, pb}],
+		Null,        Missing["pa reached b", {pa, pb}],
+		"outside",   Missing["pb went outside", {pa, pb}],
 		"candidate", {pa, pb},
-		_, Missing["unknown res", {pa, pb, res}]
+		_,           Missing["unknown res", {pa, pb, res}]
 	]
 ];
 
@@ -723,6 +736,15 @@ followAlongCandidates[ poly: SGPolygon[_] ] := Module[ { params, results },
 
 
 followAlongCandidates[ points_ ] := followAlongCandidates[ makeSGPolygon[ polygonWithMidPoints[points] ] ];
+
+
+(* ::Text:: *)
+(*checkFollowAlongCandidate checks whether a candidate is a proper solution. To do that, we continue pb until it reaches a again, getting a new path pbFull, and draw a corresponding path paFull from a. pb is a proper cut iff (a) all of these paths lie on the polygon side + pb (which contains the cut). (b) they collectively contain all the vertices of the polygon. (c) the intersection between paFull and pbFull is only the minimal part of the cut.*)
+
+
+(*checkFollowAlongCandidate[ a_, b_, increase_, { pa_, pb_ } ] := Module[
+	{},
+]*)
 
 
 (* ::Subsubsection::Closed:: *)
