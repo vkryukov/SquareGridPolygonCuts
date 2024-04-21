@@ -477,6 +477,10 @@ Format[SGPolygon[p_], StandardForm] :=
 	];
 
 
+(* ::Subsubsection:: *)
+(*SGPolygonPoint*)
+
+
 (* ::Text:: *)
 (*SGPolygonPoint is a data structure that represents a point within a polygon: either a vertex i, a point between vertices i and i+1, or an internal point.*)
 
@@ -511,10 +515,6 @@ SGPolygonPoint[ a_ ][ "coord" ] :=
 		,
 		a["polygon"]["points"][[ a["vertex"] ]] + a["polygon"]["side"][[ a["vertex"] ]] * a["offset"]
 	];
-
-
-(* ::Text:: *)
-(*Returns a point that is *)
 
 
 SGPolygonPoint[ a_ ][ i_Integer ] := Module[ {a1 = a},
@@ -588,6 +588,19 @@ pointOnSide[ { {x1_,y1_}, {x2_,y2_} }, {x_,y_} ] := (
 	( x1 == x2 == x && (y1 <= y <= y2 || y2 <= y <= y1) ) ||
 	( y1 == y2 == y && (x1 <= x <= x2 || x2 <= x <= x1) )
 );
+
+
+pointOnSide[ { a: SGPolygonPoint[_], b: SGPolygonPoint[_] }, p: SGPolygonPoint[_] ] :=
+	pointOnSide[ { a["coord"], b["coord"] }, p["coord"] ];
+
+
+sideOverlapsSides[ {a_, b_}, {c_, d_ } ] :=
+	Or[
+		pointOnSide[ {a, b}, c ],
+		pointOnSide[ {a, b}, d ],
+		pointOnSide[ {c, d}, a ],
+		pointOnSide[ {c, d}, b ]
+	];
 
 
 (* ::Text:: *)
@@ -744,13 +757,66 @@ followAlongCandidates[ poly: SGPolygon[_] ] := Module[ { params, results },
 followAlongCandidates[ points_ ] := followAlongCandidates[ makeSGPolygon[ polygonWithMidPoints[points] ] ];
 
 
-mirrorFollow[ p: SGPolygon[_], a_, b_, increase_?BooleanQ ] :=
-Module[{
-		curA = p[a], curB = p[b],
-		dirA, dirB, transform
-	}
-	,
-	transform = mirrorRotate[ curA[ "side", increase ], curB[ "side", Not @ increase ]];
+dirAndStep[ a: SGPolygon[_], b: SGPolygon[_] ] := Module[
+	{ a1 = a["coord"], b1 = b["coord"] },
+	{ Normalize[ b1 - a1 ], distance[ a1, b1 ] }
+];
+
+
+mirrorFollow[ p: SGPolygon[_], a_, b_, increase_ ] := Module[{
+		curA = p[a], curB = p[b], 
+		nextA, step, dir, lastAId = 0,
+		nextB, bWentInside = False, lastSideBId = 0, lastSideB,
+		transform, pa, pb, result
+	},
+	transform = getMirrorRotation[ curA[ "side", increase ], curB[ "side", -increase ] ];
+	pa = CreateDataStructure[ "DynamicArray", { curA } ];
+	pb = CreateDataStructure[ "DynamicArray", { curB } ];
+	nextA = curA[ increase ];
+	result = Catch @ While [ True,
+		If[ lastAId == 0,
+			nextA = curA[ increase ], (* pa still follows along the side of the polygon *)
+			nextA = pb[ "Part", ++lastAId ] (* pa switched to following pb *)
+		];
+		{ dir, step } = dirAndStep[ curA, nextA ];
+		nextB = move[ curB, transform @ dir, step ];
+		If[ nextB === Null, Throw[ "outside" ] ];
+		{ nextB, bWentInside } = nextB;
+		If[ Not @ bWentInside,
+			If[ sideOverlapsSide[ { curA, nextA }, { curB, nextB } ], 
+				Throw[ "pb met pa" ]
+				,
+				pa[ "Append", nextA ];
+				pb[ "Append", nextB ];
+				Continue[]
+			]
+		];
+		(*  pb went inside, so we might need to adjust nextA (and therefore nextB): 
+			when pa meets pb, from that point on pa should follow pb *)
+		Assert[ bWentInside ];
+		If[ lastSideBId == 0, 
+			lastSideBId = pb["Length"];
+			lastSideB = curB
+		];
+		(* see if we need to adjust nextA, and threfore step and nextB *)
+		If[ lastAId == 0 && pointOnSide[ {curA, nextA}, lastSideB ],
+			nextA = lastSideB;
+			lastAId = lastSideBId;
+			{ dir, step } = dirAndStep[ curA, nextA ];
+			nextB = move[ curB, transform @ dir, step ]
+		];
+		pa[ "Append", nextA ];
+		pb[ "Append", nextB ];
+		If[ Not @ insideQ[ nextB ], Throw[ "candidate" ] ];
+		curA = nextA;
+		curB = nextB;
+		(* just in case - TODO need a better guarantee that the cycle finishes *)
+		If[ pb[ "Length"] > 1000, Throw[ "too many iterations "] ]; 
+	];
+	If[ result == "candidate", 
+		{ Normal @ pa, Normal @ pb },
+		Missing[ result, { Normal @ pa, Normal @ pb } ]
+	]
 ];
 
 
