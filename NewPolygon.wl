@@ -681,6 +681,12 @@ getRotation[ dir1_, dir2_ ] :=
 	];
 
 
+getMirrorRotation[ dir1_, dir2_ ] := 
+	With[ { r = getRotation[ Reverse @ dir1, dir2 ] },
+		r[ {#[[2]], #[[1]]} ]&
+	];
+
+
 (* ::Text:: *)
 (*followAlong rewritten with move*)
 
@@ -736,6 +742,16 @@ followAlongCandidates[ poly: SGPolygon[_] ] := Module[ { params, results },
 
 
 followAlongCandidates[ points_ ] := followAlongCandidates[ makeSGPolygon[ polygonWithMidPoints[points] ] ];
+
+
+mirrorFollow[ p: SGPolygon[_], a_, b_, increase_?BooleanQ ] :=
+Module[{
+		curA = p[a], curB = p[b],
+		dirA, dirB, transform
+	}
+	,
+	transform = mirrorRotate[ curA[ "side", increase ], curB[ "side", Not @ increase ]];
+];
 
 
 (* ::Text:: *)

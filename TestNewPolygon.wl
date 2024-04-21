@@ -187,16 +187,16 @@ allDirections = {{0, 1}, {0, -1}, {-1, 0}, {1, 0}};
 allDirectionPairs = Tuples[ allDirections, {2} ];
 testRotation[ {dir1_, dir2_ } ] := Module[ {
 		r1 = NewPolygon`Private`getRotation[ dir1, dir2 ],
-		r2 = NewPolygon`Private`getRotation[ dir2, dir1 ]
+		r2 = NewPolygon`Private`getRotation[ dir2, dir1 ],
+		r3 = NewPolygon`Private`getMirrorRotation[ dir1, dir2 ],
+		r4 = NewPolygon`Private`getMirrorRotation[ dir2, dir1 ]
 	}
 	,
 	And @@ {
 		r1 @ dir1 == dir2,
 		r2 @ dir2 == dir1,
-		r1 @ r2 @ dir1 == dir1,
-		r2 @ r1 @ dir1 == dir1,
-		r1 @ r2 @ dir2 == dir2,
-		r2 @ r1 @ dir2 == dir2
+		r3 @ dir1 == dir2,
+		r4 @ dir2 == dir1
 	}
 ];
 TestCreate[
