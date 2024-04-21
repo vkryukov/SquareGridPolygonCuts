@@ -594,7 +594,7 @@ pointOnSide[ { a: SGPolygonPoint[_], b: SGPolygonPoint[_] }, p: SGPolygonPoint[_
 	pointOnSide[ { a["coord"], b["coord"] }, p["coord"] ];
 
 
-sideOverlapsSides[ {a_, b_}, {c_, d_ } ] :=
+sideOverlapsSide[ {a_, b_}, {c_, d_} ] :=
 	Or[
 		pointOnSide[ {a, b}, c ],
 		pointOnSide[ {a, b}, d ],
@@ -621,13 +621,10 @@ move[ p: SGPolygonPoint[a_], dir_, step_ ] := Module[ {
 	If[ Not[ insideQ[ p ] ], test = testDirection[ p, dir ]];
 	If[ test == 1, Return @ Null ]; (* would move outside *)
 	If[ test == 0,
-		Echo["test = 0"];
-		Echo[{dir, side[[ v ]], dir == side[[v]]}, "dir, side[v], dir==side[v]"];
 		(* move along a side - calculate the distance to the next vertex *)
 		Which[ 
 			(* moving towards the next vertex *)
 			dir == side[[ v ]],
-			Echo["move towards next vertex"];
 			dist = distance [ points[[ v ]], points[[ mod[ v + 1, n ] ]] ];
 			If[ step < dist - o,
 				a1["offset"] = o + step; Return @ { SGPolygonPoint[a1], False }
@@ -638,7 +635,6 @@ move[ p: SGPolygonPoint[a_], dir_, step_ ] := Module[ {
 			,
 			(* moving back towards the current vertex - reducing offset *)
 			o > 0,
-			Echo["move towards current vertex"];
 			If[ step <= o,
 				a1["offset"] = o - step; Return @ { SGPolygonPoint[a1], False }
 				,
@@ -647,7 +643,6 @@ move[ p: SGPolygonPoint[a_], dir_, step_ ] := Module[ {
 			,
 			(* moving towards the previous vertex *)
 			True,
-			Echo["move towards prev vertex"];
 			dist = distance [ points[[ v ]], points[[ mod[ v - 1, n ] ]] ];
 			a1["vertex"] = mod[ v - 1, n ];
 			If[ step <= dist,
@@ -655,7 +650,6 @@ move[ p: SGPolygonPoint[a_], dir_, step_ ] := Module[ {
 				Return @ { SGPolygonPoint[a1], False }
 				,
 				a1["offset"] = 0;
-				Echo[{a1, dir, step-dist}, "calling move again"];
 				Return @ move[ SGPolygonPoint[a1], dir, step - dist ]
 			]
 		]
@@ -747,17 +741,7 @@ followAlong[ p: SGPolygon[_], a_, b_, increase_ ] := Module[{
 ];
 
 
-followAlongCandidates[ poly: SGPolygon[_] ] := Module[ { params, results },
-	params = Select[ Tuples[{ Range[poly["n"]], Range[poly["n"]], {-1, 1} } ], #[[1]] != #[[2]] & ];
-	results = {#[[1]], #[[2]], #[[3]], QuietEcho @ followAlong[poly, #[[1]], #[[2]], #[[3]]]}& /@ params;
-	Select[ results, Not [ MissingQ [ #[[4]] ] ] &]
-];
-
-
-followAlongCandidates[ points_ ] := followAlongCandidates[ makeSGPolygon[ polygonWithMidPoints[points] ] ];
-
-
-dirAndStep[ a: SGPolygon[_], b: SGPolygon[_] ] := Module[
+dirAndStep[ a: SGPolygonPoint[_], b: SGPolygonPoint[_] ] := Module[
 	{ a1 = a["coord"], b1 = b["coord"] },
 	{ Normalize[ b1 - a1 ], distance[ a1, b1 ] }
 ];
@@ -774,14 +758,17 @@ mirrorFollow[ p: SGPolygon[_], a_, b_, increase_ ] := Module[{
 	pb = CreateDataStructure[ "DynamicArray", { curB } ];
 	nextA = curA[ increase ];
 	result = Catch @ While [ True,
+		Echo[{curA,curB},"curA,curB"];
 		If[ lastAId == 0,
 			nextA = curA[ increase ], (* pa still follows along the side of the polygon *)
 			nextA = pb[ "Part", ++lastAId ] (* pa switched to following pb *)
 		];
 		{ dir, step } = dirAndStep[ curA, nextA ];
+		Echo[{dir,step},"dir,step"];
 		nextB = move[ curB, transform @ dir, step ];
 		If[ nextB === Null, Throw[ "outside" ] ];
 		{ nextB, bWentInside } = nextB;
+		Echo[{nextB, bWentInside}, "nextB,bWentInside"];
 		If[ Not @ bWentInside,
 			If[ sideOverlapsSide[ { curA, nextA }, { curB, nextB } ], 
 				Throw[ "pb met pa" ]
@@ -789,7 +776,7 @@ mirrorFollow[ p: SGPolygon[_], a_, b_, increase_ ] := Module[{
 				pa[ "Append", nextA ];
 				pb[ "Append", nextB ];
 				Continue[]
-			]
+			];
 		];
 		(*  pb went inside, so we might need to adjust nextA (and therefore nextB): 
 			when pa meets pb, from that point on pa should follow pb *)
@@ -803,7 +790,7 @@ mirrorFollow[ p: SGPolygon[_], a_, b_, increase_ ] := Module[{
 			nextA = lastSideB;
 			lastAId = lastSideBId;
 			{ dir, step } = dirAndStep[ curA, nextA ];
-			nextB = move[ curB, transform @ dir, step ]
+			{ nextB, bWentInside } = move[ curB, transform @ dir, step ]
 		];
 		pa[ "Append", nextA ];
 		pb[ "Append", nextB ];
@@ -811,11 +798,27 @@ mirrorFollow[ p: SGPolygon[_], a_, b_, increase_ ] := Module[{
 		curA = nextA;
 		curB = nextB;
 		(* just in case - TODO need a better guarantee that the cycle finishes *)
-		If[ pb[ "Length"] > 1000, Throw[ "too many iterations "] ]; 
+		If[ pb[ "Length" ] > 1000, Throw[ "too many iterations "] ]; 
 	];
+	Echo[result, "result"];
 	If[ result == "candidate", 
 		{ Normal @ pa, Normal @ pb },
 		Missing[ result, { Normal @ pa, Normal @ pb } ]
+	]
+];
+
+
+followCandidates[ poly: SGPolygon[_], follow_ ] := Module[ { params, results },
+	params = Select[ Tuples[{ Range[poly["n"]], Range[poly["n"]], {-1, 1} } ], #[[1]] != #[[2]] & ];
+	results = {#[[1]], #[[2]], #[[3]], QuietEcho @ follow[poly, #[[1]], #[[2]], #[[3]]]}& /@ params;
+	Select[ results, Not [ MissingQ [ #[[4]] ] ] &]
+];
+
+
+followCandidates[ points_ ] := Module[{ midPoly = makeSGPolygon[ polygonWithMidPoints[points] ] },
+	Join[
+		(* followCandidates[ midPoly, followAlong], *)
+		followCandidates[ midPoly, mirrorFollow]
 	]
 ];
 
