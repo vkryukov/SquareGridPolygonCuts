@@ -768,13 +768,13 @@ mirrorFollow[ p: SGPolygon[_], a_, b_, increase_ ] := Module[{
 		nextB = move[ curB, transform @ dir, step ];
 		If[ nextB === Null, Throw[ "outside" ] ];
 		{ nextB, bWentInside } = nextB;
-		Echo[{nextB, bWentInside}, "nextB,bWentInside"];
+		Echo[{nextB, bWentInside}, "nextB, bWentInside"];
 		If[ Not @ bWentInside,
 			If[ sideOverlapsSide[ { curA, nextA }, { curB, nextB } ], 
 				Throw[ "pb met pa" ]
 				,
-				pa[ "Append", nextA ];
-				pb[ "Append", nextB ];
+				pa[ "Append", nextA ]; curA = nextA;
+				pb[ "Append", nextB ]; curB = nextB;
 				Continue[]
 			];
 		];
