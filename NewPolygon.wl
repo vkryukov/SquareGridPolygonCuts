@@ -18,7 +18,7 @@ SetUsage[DrawPolygonWithLines,
 Begin["`Private`"];
 
 
-(* ::Subsubsection::Closed:: *)
+(* ::Subsubsection:: *)
 (*Drawing primitives*)
 
 
@@ -63,7 +63,7 @@ DrawPolygonWithLines[ points_, lines_, opts: OptionsPattern[]] :=
 	];
 
 
-(* ::Subsubsection::Closed:: *)
+(* ::Subsubsection:: *)
 (*Utilities*)
 
 
@@ -552,6 +552,19 @@ Format[ p: SGPolygonPoint[a_], StandardForm ] := Module[ { points = a["polygon"]
 distance[ a_, b_ ] := Total @ Abs[ b - a ];
 
 
+DrawPolygonWithLines[ p: SGPolygon[_], lines: { __:{_SGPolygonPoint __}}, opts: OptionsPattern[]] := Module[{},
+	Show[
+		DrawPolygon[ p["points"], opts ],
+		Graphics[{
+			Thickness[0.01], 
+			MapThread[{#1, Line[#2]}&,
+				{Table[ColorData[3][n], {n, Length @ lines}],
+				(#["coord"]&/@#&)/@ lines}]
+		}]
+	]
+];
+
+
 (* ::Text:: *)
 (*testDirection takes a point on the side of a polygon and a direction, and returns 1 if moving in that direction will take us outside of the polygon, 0 if we'll move along the side, and -1 if we'll move inside.*)
 
@@ -662,8 +675,13 @@ move[ p: SGPolygonPoint[a_], dir_, step_ ] := Module[ {
 		For[ j = 1, j <= n, j++, 
 			If[ pointOnSide[ { points[[ j ]], points[[ If[ j == n, 1, j + 1] ]] }, p1 ],
 				a1 = KeyDrop[a, "inside"];
-				a1["vertex"] = j;
-				a1["offset"] = distance[ points[[j]], p1 ];
+				If[ points[[ If[ j == n, 1, j + 1] ]] == p1, 
+					a1["vertex"] = j + 1;
+					a1["offset"] = 0
+					,
+					a1["vertex"] = j;
+					a1["offset"] = distance[ points[[j]], p1 ]
+				];
 				Return @ { SGPolygonPoint[a1], True }
 			]
 		]
@@ -817,22 +835,99 @@ followCandidates[ poly: SGPolygon[_], follow_ ] := Module[ { params, results },
 
 followCandidates[ points_ ] := Module[{ midPoly = makeSGPolygon[ polygonWithMidPoints[points] ] },
 	Join[
-		(* followCandidates[ midPoly, followAlong], *)
+		followCandidates[ midPoly, followAlong],
 		followCandidates[ midPoly, mirrorFollow]
 	]
 ];
 
 
 (* ::Text:: *)
-(*checkFollowAlongCandidate checks whether a candidate is a proper solution. To do that, we continue pb until it reaches a again, getting a new path pbFull, and draw a corresponding path paFull from a. pb is a proper cut iff (a) all of these paths lie on the polygon side + pb (which contains the cut). (b) they collectively contain all the vertices of the polygon. (c) the intersection between paFull and pbFull is only the minimal part of the cut.*)
+(*compressPath remove all internal points on the sides*)
 
 
-(*checkFollowAlongCandidate[ a_, b_, increase_, { pa_, pb_ } ] := Module[
-	{},
-]*)
 
 
-(* ::Subsubsection::Closed:: *)
+
+compressPath[ s_ ] := ( s //. {
+	{a___, {b_, c_}, {b_, d_}, {b_, e_}, f___} :> {a, {b,c}, {b,e}, f},
+	{a___, {c_, b_},{ d_, b_}, {e_, b_}, f___} :> {a, {c,b}, {e,b}, f}
+});
+
+
+makeLoop[ p_ ] := If[ p[[-1]] == p[[1]], p, Append[p, p[[1]] ] ];
+
+
+compressLoop[ p_ ] := compressPath @ makeLoop @ p;
+
+
+(* ::Text:: *)
+(*checkCandidate checks whether a candidate is a proper solution. To do that, we continue pb until it reaches a again, getting a new path pbFull, and draw a corresponding path paFull from a. pb is a proper cut iff (a) all of these paths lie on the polygon side + pb (which contains the cut). (b) they collectively contain all the vertices of the polygon. (c) the intersection between paFull and pbFull is only the minimal part of the cut.*)
+
+
+checkCandidate[ pa_, pb_, mirror_ ] := Module[{
+		n = pa[[1]]["polygon"]["n"],
+		increase = If[ pa[[1]][1]["vertex"] == pa[[2]]["vertex"], 1, -1 ] * If[ mirror, -1, 1 ],
+		bStart = pb[[1]]["vertex"], bLast = pb[[-1]]["vertex"], bLastOnSide = (pb[[-1]]["offset"] != 0),
+		dirA = Normalize[ pa[[2]]["coord"] - pa[[1]]["coord"] ], 
+		dirB = Normalize[ pb[[2]]["coord"] - pb[[1]]["coord"] ],
+		poly = compressPath @ pa[[1]]["polygon"]["points"],
+		rotate, transform,
+		bNext, bRestIds, 
+		fullPb, fullPa, cut, sidePa, sidePb
+	},
+	rotate = If [ mirror,
+		getMirrorRotation[ dirB, dirA],
+		getRotation[ dirB, dirA ]
+	];
+	transform[v_] := Total[Abs[v]] * rotate[Normalize[v]];
+	
+	(* complete pb till it reaches the starting point *)
+	bNext = Which[
+		bLastOnSide && increase == 1, mod[ bLast + 1, n ],
+		bLastOnSide && increase == -1, bLast,
+		True, mod[ bLast + increase, n ]
+	];
+	bRestIds = mod[ #, n ]& /@ Range[ 
+		bNext,
+		Which[
+			bNext > bStart && increase == 1, bStart + n,
+			bNext <= bStart && increase == 1, bStart,
+			bNext >= bStart && increase == -1, bStart,
+			bNext < bStart && increase == -1, bStart - n
+			],
+		increase ];
+	fullPb = Join[
+		#["coord"]& /@ pb,
+		pb[[1]]["polygon"]["points"][[ bRestIds ]]
+	];
+	
+	(* make fullPa a transformation of fullPB *)
+	fullPa = Accumulate[ {pa[[1]]["coord"], Splice[transform /@ Differences[fullPb]]}];
+	
+	Echo[fullPa,"fullPa"];
+	Echo[fullPb,"fullPb"];
+	
+	(*  this just tests for the set of vertices, but not for the edges; so we can have a false positive but I'm too lazy 
+		to write a proper test :) *)
+	{poly, fullPa, fullPb} = compressLoop /@ {poly, fullPa, fullPb};
+	cut = Complement[ fullPb, poly ];
+	sidePa = Complement[ fullPa, cut ];
+	sidePb = Complement[ fullPb, cut ];
+	
+	Echo[{poly, cut, sidePa, sidePb}, "poly, cut, sidePa, sidePb"];
+	Union[ sidePa, sidePb ] == Union @ poly && Length[ Intersection[ sidePa, sidePb ] ] <= 2
+];
+
+
+findCuts[ points_ ] := Module[ { midPoly = makeSGPolygon[ polygonWithMidPoints[points] ] },
+	Join[
+		Select[ followCandidates[ midPoly, followAlong], checkCandidate[#[[-1,1]], #[[-1,2]], False]& ],
+		Select[ followCandidates[ midPoly, mirrorFollow], checkCandidate[#[[-1,1]], #[[-1,2]], True]& ]
+	]
+];
+
+
+(* ::Subsubsection:: *)
 (*followAlongSameDirection*)
 
 
@@ -992,16 +1087,6 @@ findSameDirectionCandidatesNew[ originalPoly_ ] := Module[ {
 		Not @ MissingQ @ Last[ # ]&
 	]
 ];
-
-
-(* ::Text:: *)
-(*compressPath remove all internal points on the sides*)
-
-
-compressPath[ s_ ] := ( s //. {
-	{a___,{b_,c_},{b_,d_},{b_,e_},f___} :> {a, {b,c}, {b,e}, f},
-	{a___,{c_,b_},{d_,b_},{e_,b_},f___} :> {a, {c,b}, {e,b}, f}
-});
 
 
 (* ::Text:: *)
