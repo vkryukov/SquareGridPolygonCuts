@@ -106,6 +106,29 @@ polygonWithMidPoints[ points_ ] := Module[ {
 
 
 (* ::Text:: *)
+(*polygonWithAllPoints adds all grid points to sides whose two angles sum up to 180\[Degree].*)
+
+
+polygonWithAllPoints[ points_ ] :=  Module[ {
+		angles = cyclicalPairs @ orderedPolygonAngle[ points ],
+		segments = cyclicalPairs @ points,
+		f
+	},
+	
+	f[ { {a1_, a2_}, {p1_, p2_} }, {i_} ] := Module[ { n = Total @ Abs[ p2 - p1 ], dir = Normalize[ p2 - p1 ] },
+		If[ a1 == a2 == \[Pi]/2 && n > 1, 
+			Table[ { i + j / n, p1 + j * dir}, {j, 1, n - 1} ], 
+			Nothing ] 
+	];
+	
+	Last /@ SortBy[ Join[
+		MapIndexed[ {First @ #2, #1}&, points ],
+		Flatten[MapIndexed[ f, MapThread[List, {angles, segments } ] ], 1]
+	], First ]
+];
+
+
+(* ::Text:: *)
 (*rotate90right and rotate90left rotate a unit vector clockwise and counter-clockwise.*)
 
 
@@ -833,7 +856,7 @@ followCandidates[ poly: SGPolygon[_], follow_ ] := Module[ { params, results },
 ];
 
 
-followCandidates[ points_ ] := Module[{ midPoly = makeSGPolygon[ polygonWithMidPoints[points] ] },
+followCandidates[ points_ ] := Module[{ midPoly = makeSGPolygon[ polygonWithAllPoints[points] ] },
 	Join[
 		followCandidates[ midPoly, followAlong],
 		followCandidates[ midPoly, mirrorFollow]
@@ -947,7 +970,7 @@ minimalCut[ p_ ] := Module[ {i, dir, p1, r},
 ]
 
 
-findCuts[ points_ ] := Module[ { midPoly = makeSGPolygon[ polygonWithMidPoints[points] ] },
+findCuts[ points_ ] := Module[ { midPoly = makeSGPolygon[ polygonWithAllPoints[points] ] },
 	Union[ minimalCut[#[[-1,-1]]]& /@ Join[
 		Select[ followCandidates[ midPoly, followAlong], checkCandidate[#[[-1,1]], #[[-1,2]], False]& ],
 		Select[ followCandidates[ midPoly, mirrorFollow], checkCandidate[#[[-1,1]], #[[-1,2]], True]& ]
