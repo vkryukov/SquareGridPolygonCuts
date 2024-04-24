@@ -518,8 +518,8 @@ SGPolygonPoint[ a_ ][ "coord" ] :=
 
 
 SGPolygonPoint[ a_ ][ i_Integer ] := Module[ {a1 = a},
-	Assert[ vertexQ[ SGPolygonPoint[a] ] ];
 	a1["vertex"] = mod[ a["vertex"] + i, a["polygon"]["n"] ];
+	a1["offset"] = 0;
 	SGPolygonPoint[a1]
 ];
 
@@ -907,7 +907,8 @@ checkCandidate[ pa_, pb_, mirror_ ] := Module[{
 	Echo[fullPa,"fullPa"];
 	Echo[fullPb,"fullPb"];
 	
-	(*  this just tests for the set of vertices, but not for the edges; so we can have a false positive but I'm too lazy 
+	(*  TODO: this just tests for the set of vertices, but not for the edges; 
+		so we can theoretically have a false positive but I'm too lazy 
 		to write a proper test :) *)
 	{poly, fullPa, fullPb} = compressLoop /@ {poly, fullPa, fullPb};
 	cut = Complement[ fullPb, poly ];
@@ -919,15 +920,43 @@ checkCandidate[ pa_, pb_, mirror_ ] := Module[{
 ];
 
 
+(* ::Text:: *)
+(*minimalCut removes the start of the cut that goes along the sides of the polygon. We use the fact that by construction, the end of the cut always lies on the side.*)
+
+
+SGPolygonPoint[ a_ ][ "changeOffset", o_ ] := Module[ { a1 = a },
+	a1["offset"] = o;
+	SGPolygonPoint[a1]
+];
+
+
+minimalCut[ p_ ] := Module[ {i, dir, p1, r},
+	i = 1;
+	While[ i < Length[p] && Not @ insideQ @ p[[i+1]], i++ ];
+	(* { p[[i]], p[[i+1]] } cuts the inside of the polygon *)
+	dir = Normalize[ p[[i + 1]]["coord"] - p[[i]]["coord"] ];
+	p1 = Which[
+		testDirection[ p[[i]], dir ] == -1, p[[i]],
+		vertexQ @ p[[i]] && p[[i]]["side"] == dir, p[[i]][1],
+		vertexQ @ p[[i]] && p[[i]]["side"] != dir, p[[i]][-1],
+		p[[i]]["side"] == dir, p[[i]][1],
+		True, p[[i]][0] 
+	];
+	r = compressPath[ #["coord"]& /@ Prepend[ p[[ i+1;; ]], p1 ] ];
+	If[ Order[ r[[1]], r[[-1]] ] == -1, Reverse @ r, r ]
+]
+
+
 findCuts[ points_ ] := Module[ { midPoly = makeSGPolygon[ polygonWithMidPoints[points] ] },
-	Join[
+	Union[ minimalCut[#[[-1,-1]]]& /@ Join[
 		Select[ followCandidates[ midPoly, followAlong], checkCandidate[#[[-1,1]], #[[-1,2]], False]& ],
 		Select[ followCandidates[ midPoly, mirrorFollow], checkCandidate[#[[-1,1]], #[[-1,2]], True]& ]
+		]
 	]
 ];
 
 
-(* ::Subsubsection:: *)
+(* ::Subsubsection::Closed:: *)
 (*followAlongSameDirection*)
 
 
