@@ -868,9 +868,6 @@ followCandidates[ points_ ] := Module[{ midPoly = makeSGPolygon[ polygonWithAllP
 (*compressPath remove all internal points on the sides*)
 
 
-
-
-
 compressPath[ s_ ] := ( s //. {
 	{a___, {b_, c_}, {b_, d_}, {b_, e_}, f___} :> {a, {b,c}, {b,e}, f},
 	{a___, {c_, b_},{ d_, b_}, {e_, b_}, f___} :> {a, {c,b}, {e,b}, f}
@@ -955,7 +952,7 @@ SGPolygonPoint[ a_ ][ "changeOffset", o_ ] := Module[ { a1 = a },
 
 minimalCut[ p_ ] := Module[ {i, dir, p1, r},
 	i = 1;
-	While[ i < Length[p] && Not @ insideQ @ p[[i+1]], i++ ];
+	While[ i < Length[p] - 1 && Not @ insideQ @ p[[i+1]], i++ ];
 	(* { p[[i]], p[[i+1]] } cuts the inside of the polygon *)
 	dir = Normalize[ p[[i + 1]]["coord"] - p[[i]]["coord"] ];
 	p1 = Which[
