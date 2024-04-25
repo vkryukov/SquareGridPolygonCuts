@@ -276,4 +276,36 @@ TestCreate[
 ]
 
 
+(* ::Subsubsection:: *)
+(*FindCongruentBisections*)
+
+
+TestCreate[
+	FindCongruentBisections[ Polygons[ "MartinGardner" ] ],
+	{{{2,2},{2,1},{3,1}}}	
+]
+
+
+TestCreate[
+	FindCongruentBisections[ Polygons[ "Eriksson" ] ],
+	{{{2,-4},{2,-2},{5,-2}}}
+]
+
+
+TestCreate[
+	FindCongruentBisections[ Polygons[ "Stripe67x5" ] ],
+	{{{-1,2},{1,2},{1,6},{2,6}},{{-1,6},{-1,5},{0,5},{0,4},{1,4},{1,3},{2,3},{2,2},{3,2},{3,1}}}
+]
+
+
+TestCreate[
+	FindCongruentBisections[ Polygons[ "ThreeCuts"] ],
+	{{{2,2},{7,2}},{{3,0},{3,1},{4,1},{4,2},{5,2},{5,3},{4,3},{4,4}},{{3,4},{3,3},{4,3},{4,2},{5,2},{5,1},{4,1},{4,0}}}
+]
+
+
+(* ::Subsubsection:: *)
+(*Epilogue*)
+
+
 End[]
