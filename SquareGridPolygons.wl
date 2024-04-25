@@ -443,10 +443,10 @@ getMirrorRotation[ dir1_, dir2_ ] :=
 
 
 (* ::Text:: *)
-(*followAlong rewritten with move*)
+(*directFollow implements the part of the algorithm where paths Pa and Pb are going in the same direction.*)
 
 
-followAlong[ p: SGPolygon[_], a_, b_, increase_ ] := Module[{
+directFollow[ p: SGPolygon[_], a_, b_, increase_ ] := Module[{
 		dirA, dirB, rotate,
 		curA = p[a], curB = p[b],
 		pa, pb, res, next
@@ -490,6 +490,10 @@ dirAndStep[ a: SGPolygonPoint[_], b: SGPolygonPoint[_] ] := Module[
 	{ a1 = a["coord"], b1 = b["coord"] },
 	{ Normalize[ b1 - a1 ], distance[ a1, b1 ] }
 ];
+
+
+(* ::Text:: *)
+(*mirrorFollow implements the path of the algorithm where Pa and Pb travel in opposite (mirror) direction.*)
 
 
 mirrorFollow[ p: SGPolygon[_], a_, b_, increase_ ] := Module[{
@@ -558,7 +562,7 @@ followCandidates[ poly: SGPolygon[_], follow_ ] := Module[ { params, results },
 
 followCandidates[ points_ ] := Module[{ midPoly = makeSGPolygon[ polygonWithAllPoints[points] ] },
 	Join[
-		followCandidates[ midPoly, followAlong],
+		followCandidates[ midPoly, directFollow],
 		followCandidates[ midPoly, mirrorFollow]
 	]
 ];
