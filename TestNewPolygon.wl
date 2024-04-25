@@ -304,6 +304,18 @@ TestCreate[
 ]
 
 
+TestCreate[
+	FindCongruentBisections[ Polygons[ "Hexamino1"] ],
+	{{{1,2},{1,1},{2,1}}}
+]
+
+
+TestCreate[
+	FindCongruentBisections[ Polygons[ "Hexamino2"] ],
+	{{{1,2},{1,1},{2,1}}}
+]
+
+
 (* ::Subsubsection:: *)
 (*Epilogue*)
 
