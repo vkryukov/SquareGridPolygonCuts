@@ -15,6 +15,10 @@ SetUsage[DrawPolygonWithLines,
 "DrawPolygon[points$, lines$] draws a polygon of points$ and lines$ on a square grid."];
 
 
+SetUsage[FindCongruentBisections,
+"FindCongruentBisections[points$] returns a list of all bisections of polygon points$ in two congruent parts."]
+
+
 Begin["`Private`"];
 
 
@@ -967,7 +971,7 @@ minimalCut[ p_ ] := Module[ {i, dir, p1, r},
 ]
 
 
-findCuts[ points_ ] := Module[ { midPoly = makeSGPolygon[ polygonWithAllPoints[points] ] },
+FindCongruentBisections[ points_ ] := Module[ { midPoly = makeSGPolygon[ polygonWithAllPoints[points] ] },
 	Union[ minimalCut[#[[-1,-1]]]& /@ Join[
 		Select[ followCandidates[ midPoly, followAlong], checkCandidate[#[[-1,1]], #[[-1,2]], False]& ],
 		Select[ followCandidates[ midPoly, mirrorFollow], checkCandidate[#[[-1,1]], #[[-1,2]], True]& ]
