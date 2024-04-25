@@ -40,7 +40,7 @@ Polygons = <|
 |>
 
 
-(* ::Subsubsection::Closed:: *)
+(* ::Subsubsection:: *)
 (*Drawing primitives*)
 
 
@@ -454,7 +454,6 @@ followAlong[ p: SGPolygon[_], a_, b_, increase_ ] := Module[{
 	,
 	dirA = curA["side", increase];
 	dirB = curB["side", increase];
-	Echo[{dirA,dirB},"dirA,dirB"];
 	rotate = Which [
 		dirA == dirB, Identity,
 		rotate90left @ dirA == dirB, rotate90left, 
@@ -465,11 +464,9 @@ followAlong[ p: SGPolygon[_], a_, b_, increase_ ] := Module[{
 	{res, {pa, pb}} = Reap @ Catch [
 		Sow[ curA, "a" ];
 		Sow[ curB, "b" ];
-		Echo[ { curA, curA["vertex"], curB, curB["vertex"] }, "curA (vertex), curB (vertex)"];
 		While[ curA["vertex"] != b,
 			next = move[ curB, rotate @ curA["side", increase], curA["sideLength", increase] ];
 			curA = curA[ increase ];
-			Echo[{curA,curB,next},"curA,curB,next"];
 			Sow[ curA, "a" ];
 			If[ next == Null, Throw[ "outside" ] ];
 			curB = next[[1]];
@@ -506,17 +503,14 @@ mirrorFollow[ p: SGPolygon[_], a_, b_, increase_ ] := Module[{
 	pb = CreateDataStructure[ "DynamicArray", { curB } ];
 	nextA = curA[ increase ];
 	result = Catch @ While [ True,
-		Echo[{curA,curB},"curA,curB"];
 		If[ lastAId == 0,
 			nextA = curA[ increase ], (* pa still follows along the side of the polygon *)
 			nextA = pb[ "Part", ++lastAId ] (* pa switched to following pb *)
 		];
 		{ dir, step } = dirAndStep[ curA, nextA ];
-		Echo[{dir,step},"dir,step"];
 		nextB = move[ curB, transform @ dir, step ];
 		If[ nextB === Null, Throw[ "outside" ] ];
 		{ nextB, bWentInside } = nextB;
-		Echo[{nextB, bWentInside}, "nextB, bWentInside"];
 		If[ Not @ bWentInside,
 			If[ sideOverlapsSide[ { curA, nextA }, { curB, nextB } ], 
 				Throw[ "pb met pa" ]
@@ -548,7 +542,6 @@ mirrorFollow[ p: SGPolygon[_], a_, b_, increase_ ] := Module[{
 		(* just in case - TODO need a better guarantee that the cycle finishes *)
 		If[ pb[ "Length" ] > 1000, Throw[ "too many iterations "] ]; 
 	];
-	Echo[result, "result"];
 	If[ result == "candidate", 
 		{ Normal @ pa, Normal @ pb },
 		Missing[ result, { Normal @ pa, Normal @ pb } ]
@@ -558,7 +551,7 @@ mirrorFollow[ p: SGPolygon[_], a_, b_, increase_ ] := Module[{
 
 followCandidates[ poly: SGPolygon[_], follow_ ] := Module[ { params, results },
 	params = Select[ Tuples[{ Range[poly["n"]], Range[poly["n"]], {-1, 1} } ], #[[1]] != #[[2]] & ];
-	results = {#[[1]], #[[2]], #[[3]], QuietEcho @ follow[poly, #[[1]], #[[2]], #[[3]]]}& /@ params;
+	results = {#[[1]], #[[2]], #[[3]], follow[poly, #[[1]], #[[2]], #[[3]]]}& /@ params;
 	Select[ results, Not [ MissingQ [ #[[4]] ] ] &]
 ];
 
@@ -630,10 +623,7 @@ checkCandidate[ pa_, pb_, mirror_ ] := Module[{
 	
 	(* make fullPa a transformation of fullPB *)
 	fullPa = Accumulate[ {pa[[1]]["coord"], Splice[transform /@ Differences[fullPb]]}];
-	
-	Echo[fullPa,"fullPa"];
-	Echo[fullPb,"fullPb"];
-	
+
 	(*  TODO: this just tests for the set of vertices, but not for the edges; 
 		so we can theoretically have a false positive but I'm too lazy 
 		to write a proper test :) *)
@@ -642,7 +632,6 @@ checkCandidate[ pa_, pb_, mirror_ ] := Module[{
 	sidePa = Complement[ fullPa, cut ];
 	sidePb = Complement[ fullPb, cut ];
 	
-	Echo[{poly, cut, sidePa, sidePb}, "poly, cut, sidePa, sidePb"];
 	Union[ sidePa, sidePb ] == Union @ poly && Length[ Intersection[ sidePa, sidePb ] ] <= 2
 ];
 
