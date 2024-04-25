@@ -1,9 +1,9 @@
 (* ::Package:: *)
 
-Needs["NewPolygon`"]
+Needs["SquareGridPolygons`"]
 
 
-Begin["`NewPolygonTests`"]
+Begin["TestSquareGridPolygons`"]
 
 
 (* ::Subsubsection:: *)
@@ -11,7 +11,7 @@ Begin["`NewPolygonTests`"]
 
 
 TestCreate[
-	NewPolygon`Private`cyclicalPairs @ Range[5],
+	SquareGridPolygons`Private`cyclicalPairs @ Range[5],
 	{{1,2},{2,3},{3,4},{4,5},{5,1}}
 ]
 
@@ -21,7 +21,7 @@ TestCreate[
 
 
 TestCreate[
-	NewPolygon`Private`orderedPolygonAngle[{{0,0},{5,0},{5,-2},{6,-2},{6,-7},{4,-7},{4,-4},{0,-4}}],
+	SquareGridPolygons`Private`orderedPolygonAngle[{{0,0},{5,0},{5,-2},{6,-2},{6,-7},{4,-7},{4,-4},{0,-4}}],
 	{\[Pi]/2,\[Pi]/2,(3 \[Pi])/2,\[Pi]/2,\[Pi]/2,\[Pi]/2,(3 \[Pi])/2,\[Pi]/2}
 ]
 
@@ -31,26 +31,26 @@ TestCreate[
 
 
 TestCreate[
-	NewPolygon`Private`rotate90left /@ {{1, 0}, {0, 1}, {-1, 0}, {0, -1}},
+	SquareGridPolygons`Private`rotate90left /@ {{1, 0}, {0, 1}, {-1, 0}, {0, -1}},
 	RotateLeft[ {{1, 0}, {0, 1}, {-1, 0}, {0, -1}}, 1]
 ];
 
 
 TestCreate[
-	NewPolygon`Private`rotate90right /@ {{1, 0}, {0, 1}, {-1, 0}, {0, -1}},
+	SquareGridPolygons`Private`rotate90right /@ {{1, 0}, {0, 1}, {-1, 0}, {0, -1}},
 	RotateRight[ {{1, 0}, {0, 1}, {-1, 0}, {0, -1}}, 1]
 ];
 
 
 TestCreate[
-	(NewPolygon`Private`rotate90left @ NewPolygon`Private`rotate90right @ #)& /@ {
+	(SquareGridPolygons`Private`rotate90left @ SquareGridPolygons`Private`rotate90right @ #)& /@ {
 		{1, 0}, {0, 1}, {-1, 0}, {0, -1}},
 	{{1, 0}, {0, 1}, {-1, 0}, {0, -1}}
 ]
 
 
 TestCreate[
-	(NewPolygon`Private`rotate90right @ NewPolygon`Private`rotate90left @ #)& /@ 
+	(SquareGridPolygons`Private`rotate90right @ SquareGridPolygons`Private`rotate90left @ #)& /@ 
 		{{1, 0}, {0, 1}, {-1, 0}, {0, -1}},
 	{{1, 0}, {0, 1}, {-1, 0}, {0, -1}}
 ]
@@ -72,12 +72,12 @@ Module[ {
 	},
 	
 TestCreate[
-	NewPolygon`Private`orientedSides[crossPolygon],
+	SquareGridPolygons`Private`orientedSides[crossPolygon],
 	{{{0,1},{1,0}},{{0,1},{1,0}},{{-1,0},{0,1}},{{-1,0},{0,1}},{{0,-1},{-1,0}},{{0,-1},{-1,0}},{{-1,0},{0,1}},{{-1,0},{0,1}},{{0,-1},{-1,0}},{{0,-1},{-1,0}},{{1,0},{0,-1}},{{1,0},{0,-1}},{{0,-1},{-1,0}},{{0,-1},{-1,0}},{{1,0},{0,-1}},{{1,0},{0,-1}},{{0,1},{1,0}},{{0,1},{1,0}},{{1,0},{0,-1}},{{1,0},{0,-1}},{{0,1},{1,0}},{{0,1},{1,0}},{{-1,0},{0,1}},{{-1,0},{0,1}}}
 ];
 
 TestCreate[
-	NewPolygon`Private`orientedSides[Reverse@RotateLeft[crossPolygon,7]],
+	SquareGridPolygons`Private`orientedSides[Reverse@RotateLeft[crossPolygon,7]],
 	{{{0,1},{-1,0}},{{0,1},{-1,0}},{{1,0},{0,1}},{{1,0},{0,1}},{{0,-1},{1,0}},{{0,-1},{1,0}},{{1,0},{0,1}},{{1,0},{0,1}},{{0,-1},{1,0}},{{0,-1},{1,0}},{{-1,0},{0,-1}},{{-1,0},{0,-1}},{{0,-1},{1,0}},{{0,-1},{1,0}},{{-1,0},{0,-1}},{{-1,0},{0,-1}},{{0,1},{-1,0}},{{0,1},{-1,0}},{{-1,0},{0,-1}},{{-1,0},{0,-1}},{{0,1},{-1,0}},{{0,1},{-1,0}},{{1,0},{0,1}},{{1,0},{0,1}}}
 ];
 		
@@ -91,10 +91,10 @@ TestCreate[
 allDirections = {{0, 1}, {0, -1}, {-1, 0}, {1, 0}};
 allDirectionPairs = Tuples[ allDirections, {2} ];
 testRotation[ {dir1_, dir2_ } ] := Module[ {
-		r1 = NewPolygon`Private`getRotation[ dir1, dir2 ],
-		r2 = NewPolygon`Private`getRotation[ dir2, dir1 ],
-		r3 = NewPolygon`Private`getMirrorRotation[ dir1, dir2 ],
-		r4 = NewPolygon`Private`getMirrorRotation[ dir2, dir1 ]
+		r1 = SquareGridPolygons`Private`getRotation[ dir1, dir2 ],
+		r2 = SquareGridPolygons`Private`getRotation[ dir2, dir1 ],
+		r3 = SquareGridPolygons`Private`getMirrorRotation[ dir1, dir2 ],
+		r4 = SquareGridPolygons`Private`getMirrorRotation[ dir2, dir1 ]
 	}
 	,
 	And @@ {
@@ -114,11 +114,11 @@ TestCreate[
 (*move and SGPolygonPoint*)
 
 
-poly1 = NewPolygon`Private`makeSGPolygon[{{0,0},{5,0},{5,-2},{6,-2},{6,-7},{4,-7},{4,-4},{0,-4}}];
+poly1 = SquareGridPolygons`Private`makeSGPolygon[{{0,0},{5,0},{5,-2},{6,-2},{6,-7},{4,-7},{4,-4},{0,-4}}];
 
 
 moveTest[ poly_, a_, dir_, step_ ] := Module[ { 
-		r = QuietEcho @ NewPolygon`Private`move[ poly[a], dir, step ] 
+		r = QuietEcho @ SquareGridPolygons`Private`move[ poly[a], dir, step ] 
 	},
 	If[ r === Null, 
 		r, 
@@ -172,7 +172,7 @@ TestCreate[
 ]
 
 
-poly1mid = NewPolygon`Private`makeSGPolygon[{{0,0},{5,0},{5,-2},{6,-2},{6,-7},{5,-7},{4,-7},{4,-4},{0,-4},{0,-2}}];
+poly1mid = SquareGridPolygons`Private`makeSGPolygon[{{0,0},{5,0},{5,-2},{6,-2},{6,-7},{5,-7},{4,-7},{4,-4},{0,-4},{0,-2}}];
 
 
 TestCreate[
@@ -186,37 +186,37 @@ TestCreate[
 
 
 TestCreate[
-	FindCongruentBisections[ Polygons[ "MartinGardner" ] ],
+	FindCongruentBisections[ SGPolygons[ "MartinGardner" ] ],
 	{{{2,2},{2,1},{3,1}}}	
 ]
 
 
 TestCreate[
-	FindCongruentBisections[ Polygons[ "Eriksson" ] ],
+	FindCongruentBisections[ SGPolygons[ "Eriksson" ] ],
 	{{{2,-4},{2,-2},{5,-2}}}
 ]
 
 
 TestCreate[
-	FindCongruentBisections[ Polygons[ "Stripe67x5" ] ],
+	FindCongruentBisections[ SGPolygons[ "Stripe67x5" ] ],
 	{{{-1,2},{1,2},{1,6},{2,6}},{{-1,6},{-1,5},{0,5},{0,4},{1,4},{1,3},{2,3},{2,2},{3,2},{3,1}}}
 ]
 
 
 TestCreate[
-	FindCongruentBisections[ Polygons[ "ThreeCuts"] ],
+	FindCongruentBisections[ SGPolygons[ "ThreeCuts"] ],
 	{{{2,2},{7,2}},{{3,0},{3,1},{4,1},{4,2},{5,2},{5,3},{4,3},{4,4}},{{3,4},{3,3},{4,3},{4,2},{5,2},{5,1},{4,1},{4,0}}}
 ]
 
 
 TestCreate[
-	FindCongruentBisections[ Polygons[ "Hexamino1"] ],
+	FindCongruentBisections[ SGPolygons[ "Hexamino1"] ],
 	{{{1,2},{1,1},{2,1}}}
 ]
 
 
 TestCreate[
-	FindCongruentBisections[ Polygons[ "Hexamino2"] ],
+	FindCongruentBisections[ SGPolygons[ "Hexamino2"] ],
 	{{{1,2},{1,1},{2,1}}}
 ]
 

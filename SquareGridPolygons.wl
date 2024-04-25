@@ -1,9 +1,9 @@
 (* ::Package:: *)
 
-BeginPackage["NewPolygon`", {"GeneralUtilities`"}];
+BeginPackage["SquareGridPolygons`", {"GeneralUtilities`"}];
 
 
-SetUsage[Polygons,
+SetUsage[SGPolygons,
 "Polygons is an association with string keys defining some interesting polygons."]
 
 
@@ -30,7 +30,7 @@ Begin["`Private`"];
 (*Some interesting polygons*)
 
 
-Polygons = <|
+SGPolygons = <|
 	"MartinGardner" -> {{0,0},{0,1},{1,1},{1,2},{2,2},{2,3},{3,3},{3,4},{4,4},{4,3},{5,3},{5,2},{4,2},{4,1},{3,1},{3,-1},{1,-1},{1,0}},
 	"Eriksson" -> {{0,0},{5,0},{5,-2},{6,-2},{6,-7},{5,-7},{4,-7},{4,-4},{0,-4},{0,-2}},
 	"Stripe67x5" -> {{0,0},{0,1},{-1,1},{-1,2},{-2,2},{-2,3},{-3,3},{-3,4},{-4,4},{-4,6},{0,6},{0,8},{1,8},{1,7},{2,7},{2,6},{3,6},{3,5},{4,5},{4,4},{5,4},{5,1},{1,1},{1,0}},
