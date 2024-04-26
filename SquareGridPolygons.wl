@@ -669,7 +669,7 @@ minimalCut[ p_ ] := Module[ {i, dir, p1, r},
 
 FindCongruentBisections[ points_ ] := Module[ { midPoly = makeSGPolygon[ polygonWithAllPoints[points] ] },
 	Union[ minimalCut[#[[-1,-1]]]& /@ Join[
-		Select[ followCandidates[ midPoly, followAlong], checkCandidate[#[[-1,1]], #[[-1,2]], False]& ],
+		Select[ followCandidates[ midPoly, directFollow], checkCandidate[#[[-1,1]], #[[-1,2]], False]& ],
 		Select[ followCandidates[ midPoly, mirrorFollow], checkCandidate[#[[-1,1]], #[[-1,2]], True]& ]
 		]
 	]
