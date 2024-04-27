@@ -204,6 +204,18 @@ TestCreate[
 
 
 TestCreate[
+	FindCongruentBisections[ SGPolygons[ "Stripe375x1" ] ],
+	{}
+]
+
+
+TestCreate[
+	FindCongruentBisections[ SGPolygons[ "Stripe1519x1" ] ],
+	{}
+]
+
+
+TestCreate[
 	FindCongruentBisections[ SGPolygons[ "ThreeCuts"] ],
 	{{{2,2},{7,2}},{{3,0},{3,1},{4,1},{4,2},{5,2},{5,3},{4,3},{4,4}},{{3,4},{3,3},{4,3},{4,2},{5,2},{5,1},{4,1},{4,0}}}
 ]

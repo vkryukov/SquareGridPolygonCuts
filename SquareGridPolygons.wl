@@ -36,7 +36,9 @@ SGPolygons = <|
 	"Stripe67x5" -> {{0,0},{0,1},{-1,1},{-1,2},{-2,2},{-2,3},{-3,3},{-3,4},{-4,4},{-4,6},{0,6},{0,8},{1,8},{1,7},{2,7},{2,6},{3,6},{3,5},{4,5},{4,4},{5,4},{5,1},{1,1},{1,0}},
 	"ThreeCuts" -> {{0,0},{6,0},{6,1},{7,1},{7,2},{8,2},{8,3},{7,3},{7,4},{1,4},{1,3},{2,3},{2,2},{1,2},{1,1},{0,1}},
 	"Hexamino1" -> {{0,0},{0,2},{1,2},{1,3},{2,3},{2,2},{3,2},{3,1},{2,1},{2,0}},
-	"Hexamino2" -> {{0,0},{0,2},{2,2},{2,3},{3,3},{3,1},{2,1},{2,0}}
+	"Hexamino2" -> {{0,0},{0,2},{2,2},{2,3},{3,3},{3,1},{2,1},{2,0}},
+	"Stripe375x1" -> {{0,0},{0,2},{1,2},{1,5},{2,5},{2,8},{3,8},{3,4},{2,4},{2,1},{1,1},{1,0}},
+	"Stripe1519x1" -> {{0,0},{0,2},{1,2},{1,6},{2,6},{2,10},{3,10},{3,5},{2,5},{2,1},{1,1},{1,0}}
 |>
 
 
@@ -635,8 +637,8 @@ checkCandidate[ pa_, pb_, mirror_ ] := Module[{
 	cut = Complement[ fullPb, poly ];
 	sidePa = Complement[ fullPa, cut ];
 	sidePb = Complement[ fullPb, cut ];
-	
-	Union[ sidePa, sidePb ] == Union @ poly && Length[ Intersection[ sidePa, sidePb ] ] <= 2
+	(* Echo[{poly,fullPa,fullPb,cut,sidePa,sidePb},"poly, fullPa, fullPb, cut, sidePa, sidePb"]; *)
+	Union[ sidePa, sidePb ] == Union @ poly && Intersection[ sidePa, sidePb ] == Intersection[ poly, cut ]
 ];
 
 
@@ -672,6 +674,26 @@ FindCongruentBisections[ points_ ] := Module[ { midPoly = makeSGPolygon[ polygon
 		Select[ followCandidates[ midPoly, directFollow], checkCandidate[#[[-1,1]], #[[-1,2]], False]& ],
 		Select[ followCandidates[ midPoly, mirrorFollow], checkCandidate[#[[-1,1]], #[[-1,2]], True]& ]
 		]
+	]
+];
+
+
+(* ::Subsubsection:: *)
+(*Debugging*)
+
+
+findAllCuts[ points_ ] := Module[ { midPoly = makeSGPolygon[ polygonWithAllPoints[points] ] },
+	Join[
+		Prepend[#, False]& /@ Select[ followCandidates[ midPoly, directFollow], checkCandidate[#[[-1,1]], #[[-1,2]], False]& ],
+		Prepend[#, True]& /@ Select[ followCandidates[ midPoly, mirrorFollow], checkCandidate[#[[-1,1]], #[[-1,2]], True]& ]
+	]
+];
+
+
+drawCutCandidate[{mirror_, a_, b_, increase_, {pa_, pb_}}] := With[ {poly = pa[[1]]["polygon"]["points"]}, 
+	Show[
+		DrawPolygonWithLines[ poly, { #["coord"]& /@ pa, #["coord"]& /@ pb }, "Numbered" -> True ],
+		PlotLabel -> StringForm["a=``, b=`` `` ``", a, b, If[increase == 1, "\[Rule]", "\[LeftArrow]"], mirror]
 	]
 ];
 
